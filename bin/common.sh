@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#######################################
+CURRENT=$(cd $(dirname $0) && pwd)
+PROJECT_ROOT="${CURRENT%/}/.."
+BIN="${PROJECT_ROOT}/bin"
+LOCKS="${PROJECT_ROOT}/jobs/locks"
+SOURCES="${PROJECT_ROOT}/src"
+TESTS="${PROJECT_ROOT}/src/test"
+#######################################
+
+# do for common setting
+
