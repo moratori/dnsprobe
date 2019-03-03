@@ -96,7 +96,7 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
         targetにて表される辞書データをjsonとして、STATIC_DIR配下に保存する
         """
 
-        filebasename = "measurement_info.json"
+        filebasename = self.cnfs.data.path
         path = os.path.join(config.STATIC_DIR, filebasename)
 
         with open(path, "w", encoding="utf-8") as handle:
