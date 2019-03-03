@@ -313,12 +313,10 @@ class Measurer(framework.BaseSetup):
 
             nameserver = measurement.nameserver
             protocol = measurement.proto
-            queries = measurement.query
-            v4_dst = measurement.destination.v4
-            v6_dst = measurement.destination.v6
+            query = measurement.query
+            dst = measurement.destination
 
-            # todo: コメントアウトを削除すること
-            for addr in v4_dst:  # + v6_dst:
+            for addr in dst:
 
                 addr_obj = ipaddress.ip_address(addr)
 
@@ -330,37 +328,34 @@ class Measurer(framework.BaseSetup):
                     self.logger.error("unknown version addr: %s" % str(addr))
                     sys.exit(1)
 
-                for proto in protocol:
+                queryer, timeout = queryer_info_by_protocol[protocol]
 
-                    queryer, timeout = queryer_info_by_protocol[proto]
+                qname = query.qname
+                rrtype = query.rrtype
 
-                    for query in queries:
-                        qname = query.qname
-                        rrtype = query.rrtype
+                try:
+                    qname_obj = dns.name.from_text(qname)
+                    rrtype_obj = dns.rdatatype.from_text(rrtype)
+                    qo = dns.message.make_query(qname_obj, rrtype_obj)
+                except dns.rdatatype.UnknownRdatatype:
+                    self.logger.warning("unknown query: %s" % (rrtype))
+                    self.logger.warning("measurement skipped")
+                    continue
 
-                        try:
-                            qname_obj = dns.name.from_text(qname)
-                            rrtype_obj = dns.rdatatype.from_text(rrtype)
-                            qo = dns.message.make_query(qname_obj, rrtype_obj)
-                        except dns.rdatatype.UnknownRdatatype:
-                            self.logger.warning("unknown query: %s" % (rrtype))
-                            self.logger.warning("measurement skipped")
-                            continue
-
-                        async_results.append(
-                            threadpool.apply_async(self.__measurement_core,
-                                                   (current_time,
-                                                    nameserver,
-                                                    queryer,
-                                                    addr,
-                                                    source,
-                                                    addr_obj.version,
-                                                    timeout,
-                                                    proto,
-                                                    qname,
-                                                    rrtype,
-                                                    qo
-                                                    )))
+                async_results.append(
+                    threadpool.apply_async(self.__measurement_core,
+                                           (current_time,
+                                            nameserver,
+                                            queryer,
+                                            addr,
+                                            source,
+                                            addr_obj.version,
+                                            timeout,
+                                            protocol,
+                                            qname,
+                                            rrtype,
+                                            qo
+                                            )))
         for each in async_results:
             result.append(each.get())
 
