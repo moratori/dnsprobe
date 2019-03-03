@@ -1,0 +1,24 @@
+<html>
+<body>
+<table>
+<tr>
+        <th>hostname</th>
+        <th>address_family</th>
+        <th>transport_protocol</th>
+        <th>qname</th>
+        <th>rrtype</th>
+</tr>
+
+{% for m in measurement_infos %}
+<tr>
+        <td>{{ m.hostname }}</td>
+        <td>{{ m.address_family }}</td>
+        <td>{{ m.transport_protocol }}</td>
+        <td>{{ m.qname }}</td>
+        <td>{{ m.rrtype }}</td>
+</tr>
+{% endfor %}
+
+</table>
+</body>
+</html>
