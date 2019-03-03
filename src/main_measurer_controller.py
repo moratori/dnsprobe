@@ -6,7 +6,7 @@ docstring is here
 
 import common.config as config
 import common.framework as framework
-
+import data.dao as dao
 import traceback
 import sys
 import argparse
@@ -14,7 +14,7 @@ import flask
 from flask import render_template
 
 
-class MeasurerController(framework.BaseSetup):
+class MeasurerController(framework.SetupwithMySQLdb):
 
     def __init__(self):
         super().__init__(__name__, __file__)
@@ -42,8 +42,31 @@ class MeasurerController(framework.BaseSetup):
     def index(self):
         return render_template("index.tmpl")
 
+    def edit_measurement_target(self):
+
+        measurement_infos = (self.session.query(dao.MeasurementTarget)
+                             .order_by(dao.MeasurementTarget.hostname)
+                             .all())
+
+        data = []
+        for m in measurement_infos:
+            data.append(dict(hostname=m.hostname,
+                             address_family=m.address_family,
+                             transport_protocol=m.transport_protocol,
+                             qname=m.qname,
+                             rrtype=m.rrtype))
+
+        return render_template("edit/measurement_target.tmpl",
+                               measurement_infos=data)
+
     def setup_server_route(self):
-        self.server.add_url_rule("/", "index", self.index)
+        self.server.add_url_rule("/",
+                                 "index",
+                                 self.index)
+
+        self.server.add_url_rule("/edit/measurement_target",
+                                 "edit_measurement_target",
+                                 self.edit_measurement_target)
 
     def run(self):
         self.server.run(host=self.args.host, port=self.args.port)
