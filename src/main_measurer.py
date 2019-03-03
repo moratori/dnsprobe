@@ -91,11 +91,13 @@ class MeasurementDataConverter():
         if err is not None:
             result["fields"]["reason"] = str(err)
             result["fields"]["time_took"] = time_diff
+            result["tags"]["success"] = False
             return result
 
         parsed = self.parse_response_to_fields(qname, rrtype, con)
         parsed["time_took"] = time_diff
 
+        result["tags"]["success"] = True
         result["fields"] = parsed
 
         return result
