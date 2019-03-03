@@ -45,11 +45,7 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
     def construct_json_data(self, measurement_infos, full_resolvers):
 
         result = []
-        tmp_nameservers = set([])
-        tmp_group_by_nameserver_v4addr = {}
-        tmp_group_by_nameserver_v6addr = {}
-        tmp_group_by_nameserver_proto = {}
-        tmp_group_by_nameserver_query = {}
+        tmp_group_by_nameserver_addr = {}
 
         fr = rec_resolver.FullResolver(full_resolvers)
 
@@ -60,52 +56,25 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
             qname = mi.qname
             rrtype = mi.rrtype
 
-            tmp_nameservers.add(nameserver)
-
-            if af == types.AddressFamily.V4:
-                if nameserver not in tmp_group_by_nameserver_v4addr:
+            if (af, nameserver) not in tmp_group_by_nameserver_addr:
+                if af == types.AddressFamily.V4:
                     addr = fr.resolve_a(nameserver)
-                    tmp_group_by_nameserver_v4addr[nameserver] = addr
-                    self.logger.info("%s address for %s is %s" %
-                                     (str(af), nameserver, addr))
-            elif af == types.AddressFamily.V6:
-                if nameserver not in tmp_group_by_nameserver_v6addr:
+                elif af == types.AddressFamily.V6:
                     addr = fr.resolve_aaaa(nameserver)
-                    tmp_group_by_nameserver_v6addr[nameserver] = addr
-                    self.logger.info("%s address for %s is %s" %
-                                     (str(af), nameserver, addr))
-            else:
-                self.logger.warning("address family must be V4 or V6: %s" %
-                                    (str(af)))
-                continue
+                else:
+                    self.logger.warning("address family must be v4 or v6 %s" %
+                                        (str(af)))
+                    continue
+                tmp_group_by_nameserver_addr[(af, nameserver)] = addr
+                self.logger.info("%s address for %s is %s" %
+                                 (str(af), nameserver, addr))
 
-            if nameserver not in tmp_group_by_nameserver_proto:
-                tmp_group_by_nameserver_proto[nameserver] = [proto]
-            else:
-                if proto not in tmp_group_by_nameserver_proto[nameserver]:
-                    tmp_group_by_nameserver_proto[nameserver].append(proto)
+            addr = tmp_group_by_nameserver_addr[(af, nameserver)]
 
-            rec = (qname, rrtype)
-            if nameserver not in tmp_group_by_nameserver_query:
-                tmp_group_by_nameserver_query[nameserver] = [rec]
-            else:
-                if rec not in tmp_group_by_nameserver_query[nameserver]:
-                    tmp_group_by_nameserver_query[nameserver].append(rec)
-
-        for nameserver in tmp_nameservers:
-            v4 = (tmp_group_by_nameserver_v4addr[nameserver]
-                  if nameserver in tmp_group_by_nameserver_v4addr
-                  else [])
-            v6 = (tmp_group_by_nameserver_v6addr[nameserver]
-                  if nameserver in tmp_group_by_nameserver_v6addr
-                  else [])
-            proto = tmp_group_by_nameserver_proto[nameserver]
-            queries = tmp_group_by_nameserver_query[nameserver]
-            result.append({"nameserver": nameserver,
-                           "destination": {"v4": v4, "v6": v6},
-                           "proto": proto,
-                           "query": [{"qname": qname, "rrtype": rrtype}
-                                     for (qname, rrtype) in queries]})
+            result.append(dict(nameserver=nameserver,
+                               destination=addr,
+                               proto=proto,
+                               query=dict(qname=qname, rrtype=rrtype)))
 
         self.logger.debug("object for json is constructed: %s" % (result))
 
