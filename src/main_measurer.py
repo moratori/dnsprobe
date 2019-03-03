@@ -73,25 +73,24 @@ class MeasurementDataConverter():
 
         measurement_name = self.cnfs.data_store.database
 
-        result = {"measurement": measurement_name,
-                  "time":        current_time,
-                  "tags": {
-                      "af": af,
-                      "dst_addr": dst,
-                      "dst_name": nameserver,
-                      "from": src,
-                      "prb_id": prb_id,
-                      "proto": proto,
-                      "rrtype": rrtype,
-                      "qname": qname},
-                  "fields": {}}
+        result = dict(measurement=measurement_name,
+                      time=current_time,
+                      tags=dict(af=af,
+                                dst_addr=dst,
+                                dst_name=nameserver,
+                                src_addr=src,
+                                prb_id=prb_id,
+                                proto=proto,
+                                rrtype=rrtype,
+                                qname=qname),
+                      fields=dict())
 
         (err, con) = res
 
         if err is not None:
+            result["tags"]["success"] = False
             result["fields"]["reason"] = str(err)
             result["fields"]["time_took"] = time_diff
-            result["tags"]["success"] = False
             return result
 
         parsed = self.parse_response_to_fields(qname, rrtype, con)
