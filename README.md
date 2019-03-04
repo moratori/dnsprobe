@@ -1,4 +1,6 @@
-# dnsprobe
+# dnsprobe; RTT monitor
+
+![sample figure](sample.jpg)
 
 ## 概要
 
