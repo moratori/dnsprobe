@@ -145,7 +145,9 @@ class Measurer(framework.BaseSetup):
 
     def __set_measurer_id(self):
         hostname = socket.gethostname()
-        self.measurer_id = binascii.crc32(hostname.encode("utf8"))
+        self.measurer_id = "%s-%d" % (
+            self.cnfs.measurement.region,
+            binascii.crc32(hostname.encode("utf8")))
 
     def __set_global_ipaddress(self):
         canonical_addrs = []
