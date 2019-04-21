@@ -22,7 +22,6 @@ import dns.query
 import dns.rdatatype
 import dns.exception
 
-from influxdb import InfluxDBClient
 from multiprocessing.pool import ThreadPool
 
 
@@ -71,7 +70,7 @@ class MeasurementDataConverter():
                                 rrtype,
                                 res):
 
-        measurement_name = self.cnfs.data_store.database
+        measurement_name = self.cnfg.data_store.database
 
         (err, con) = res
 
@@ -130,7 +129,7 @@ def ns_parser(qname_obj, rtype_obj, res):
     return {}
 
 
-class Measurer(framework.BaseSetup):
+class Measurer(framework.SetupwithInfluxdb):
 
     def __init__(self):
         super().__init__(__name__, __file__)
@@ -227,18 +226,11 @@ class Measurer(framework.BaseSetup):
             sys.exit(1)
 
     def write_measurement_data(self, data):
-        host = self.cnfs.data_store.host
-        port = self.cnfs.data_store.port
-        user = self.cnfs.data_store.user
-        passwd = self.cnfs.data_store.passwd
-        database = self.cnfs.data_store.database
-
-        client = InfluxDBClient(host, int(port), user, passwd, database)
         ret = False
 
         try:
             self.logger.info("writing data to influxdb")
-            ret = client.write_points(data)
+            ret = self.session.write_points(data)
             if not ret:
                 self.logger.warning("writing data to the influxdb failed")
                 self.logger.debug("while writing followeing %s" % str(data))
@@ -246,7 +238,7 @@ class Measurer(framework.BaseSetup):
             self.logger.warning("%s occurred while writing" % str(ex))
             self.logger.debug("while writing following %s" % str(data))
         finally:
-            client.close()
+            pass
 
         return ret
 
