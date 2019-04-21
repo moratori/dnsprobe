@@ -12,6 +12,7 @@ import traceback
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
+from influxdb import InfluxDBClient
 
 
 class BaseSetup(object):
@@ -103,6 +104,34 @@ class SetupwithMySQLdb(BaseSetup):
                                               autoflush=False,
                                               bind=self.dbengine))
         self.session = session
+
+    def start(self, **args):
+        try:
+            self.logger.info("starting main routine")
+            self.run(**args)
+            self.logger.info("main routine completed in successfully")
+        except Exception as ex:
+            self.logger.error("unexpected exception <%s> occurred" % (str(ex)))
+            self.logger.error(traceback.format_exc())
+            sys.exit(1)
+        finally:
+            self.session.close()
+        sys.exit(0)
+
+
+class SetupwithInfluxdb(BaseSetup):
+
+    def __init__(self, module_name, script_name):
+        super().__init__(module_name, script_name)
+        self.setup()
+
+    def setup(self):
+        host = self.cnfg.data_store.host
+        port = self.cnfg.data_store.port
+        user = self.cnfg.data_store.user
+        passwd = self.cnfg.data_store.passwd
+        database = self.cnfg.data_store.database
+        self.session = InfluxDBClient(host, int(port), user, passwd, database)
 
     def start(self, **args):
         try:
