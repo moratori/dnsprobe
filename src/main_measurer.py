@@ -73,6 +73,16 @@ class MeasurementDataConverter():
 
         measurement_name = self.cnfs.data_store.database
 
+        (err, con) = res
+
+        if err:
+            field_data = dict(reason=str(err),
+                              time_took=time_diff)
+        else:
+            parsed = self.parse_response_to_fields(qname, rrtype, con)
+            parsed["time_took"] = time_diff
+            field_data = parsed
+
         result = dict(measurement=measurement_name,
                       time=current_time,
                       tags=dict(af=af,
@@ -82,22 +92,9 @@ class MeasurementDataConverter():
                                 prb_id=prb_id,
                                 proto=proto,
                                 rrtype=rrtype,
-                                qname=qname),
-                      fields=dict())
-
-        (err, con) = res
-
-        if err is not None:
-            result["tags"]["success"] = False
-            result["fields"]["reason"] = str(err)
-            result["fields"]["time_took"] = time_diff
-            return result
-
-        parsed = self.parse_response_to_fields(qname, rrtype, con)
-        parsed["time_took"] = time_diff
-
-        result["tags"]["success"] = True
-        result["fields"] = parsed
+                                qname=qname,
+                                success=err is None),
+                      fields=field_data)
 
         return result
 
