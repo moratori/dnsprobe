@@ -92,7 +92,7 @@ class MeasurementDataConverter():
                                 proto=proto,
                                 rrtype=rrtype,
                                 qname=qname,
-                                success=err is None),
+                                got_response=err is None),
                       fields=field_data)
 
         return result
