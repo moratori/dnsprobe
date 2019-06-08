@@ -7,7 +7,6 @@ docstring is here
 import os
 import common.config as config
 import common.framework as framework
-import data.dao as dao
 import datetime
 import traceback
 import sys
@@ -18,9 +17,16 @@ import dash_core_components as doc
 import plotly.graph_objs as go
 from dash.dependencies import Input, Output
 from flask import abort, Response
+from werkzeug.routing import BaseConverter
 
 
-class ServiceLevelViewer(framework.SetupwithMySQLdb):
+class RegexConverter(BaseConverter):
+    def __init__(self, url_map, *items):
+        super(RegexConverter, self).__init__(url_map)
+        self.regex = items[0]
+
+
+class ServiceLevelViewer(framework.SetupwithInfluxdb):
 
     def __init__(self):
         super().__init__(__name__, __file__)
@@ -52,14 +58,28 @@ class ServiceLevelViewer(framework.SetupwithMySQLdb):
 
         return header
 
+    def __make_authoritative_group(self):
+        ret = self.session.query("show tag values with key = dst_name")
+        result = []
+        for each in ret:
+            for record in each:
+                dst_name = record["value"]
+                result.append(dict(label=dst_name, value=dst_name))
+        return result
+
+    def __make_probe_group(self):
+        ret = self.session.query("show tag values with key = prb_id")
+        result = []
+        for each in ret:
+            for record in each:
+                dst_name = record["value"]
+                result.append(dict(label=dst_name, value=dst_name))
+        return result
+
     def make_menu(self):
 
-        # TODO: 正しく実装
-        authoritative_group = [dict(label="root dns server", value="root"),
-                               dict(label="jp dns server", value="jp")]
-
-        probe_group = [dict(label="tyo", value="tyo"),
-                       dict(label="sjc", value="sjc")]
+        authoritative_group = self.__make_authoritative_group()
+        probe_group = self.__make_probe_group()
 
         menu = html.Div([
             html.Div([
@@ -80,7 +100,7 @@ class ServiceLevelViewer(framework.SetupwithMySQLdb):
 
             html.Div([
                 "Filter by authoritative server:",
-                doc.Dropdown(id="main-content-menu-filter_authoritative_server",
+                doc.Dropdown(id="main-content-menu-filter_authoritatives",
                              options=authoritative_group,
                              multi=False)
             ], style=dict(display="inline-block",
@@ -151,6 +171,7 @@ class ServiceLevelViewer(framework.SetupwithMySQLdb):
 
         cssdir = self.cnfs.resource.css_dir
         path = os.path.join(config.STATIC_DIR, cssdir)
+        cssext = ".css"
 
         if not os.path.isdir(path):
             self.logger.warning("path is not css dir: %s" % path)
@@ -159,10 +180,12 @@ class ServiceLevelViewer(framework.SetupwithMySQLdb):
         self.logger.info("css found for %s" % str(csslists))
 
         result = html.Div([html.Link(rel="stylesheet",
-                                     href=os.path.join("/static/",
+                                     href=os.path.join("/",
+                                                       os.path.basename(
+                                                           config.STATIC_DIR),
                                                        cssdir,
                                                        each))
-                           for each in csslists if each.endswith(".css")])
+                           for each in csslists if each.endswith(cssext)])
 
         return result
 
@@ -187,16 +210,15 @@ class ServiceLevelViewer(framework.SetupwithMySQLdb):
 
     def set_callbacks(self):
 
-        @self.application.server.route(os.path.join("/static/",
-                                                    self.cnfs.resource.css_dir,
-                                                    "<stylesheet>"))
+        @self.application.server.route(os.path.join(
+            "/",
+            os.path.basename(
+                config.STATIC_DIR),
+            self.cnfs.resource.css_dir,
+            '<regex("[a-zA-Z0-9]+\\.css"):stylesheet>'))
         def serve_css(stylesheet):
 
             self.logger.info("requested css file \"%s\"" % str(stylesheet))
-
-            if (".." in stylesheet) or ("/" in stylesheet):
-                self.logger.warn("invalid file name \"%s\"" % str(stylesheet))
-                abort(404)
 
             try:
                 with open(os.path.join(config.STATIC_DIR,
@@ -210,7 +232,8 @@ class ServiceLevelViewer(framework.SetupwithMySQLdb):
                 abort(404)
 
     def run(self):
-        self.application = dash.Dash()
+        self.application = dash.Dash(__name__)
+        self.application.server.url_map.converters['regex'] = RegexConverter
         self.application.css.config.serve_locally = self.args.offline
         self.application.scripts.config.serve_locally = self.args.offline
 
