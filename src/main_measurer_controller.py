@@ -9,6 +9,7 @@ import common.framework as framework
 import data.dao as dao
 import traceback
 import sys
+import os
 import argparse
 import flask
 from flask import render_template
@@ -56,7 +57,8 @@ class MeasurerController(framework.SetupwithMySQLdb):
                              qname=m.qname,
                              rrtype=m.rrtype))
 
-        return render_template("edit/measurement_target.tmpl",
+        return render_template(os.path.join("edit",
+                                            "measurement_target.tmpl"),
                                measurement_infos=data)
 
     def setup_server_route(self):
