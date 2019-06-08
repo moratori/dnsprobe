@@ -11,10 +11,12 @@ import datetime
 import traceback
 import sys
 import argparse
+import json
 import dash
 import dash_html_components as html
 import dash_core_components as doc
 import plotly.graph_objs as go
+import html as sanitizer
 from dash.dependencies import Input, Output
 from flask import abort, Response
 from werkzeug.routing import BaseConverter
@@ -80,6 +82,14 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
 
         authoritative_group = self.__make_authoritative_group()
         probe_group = self.__make_probe_group()
+        default_authoritative = None
+        default_probe = None
+
+        if authoritative_group:
+            default_authoritative = authoritative_group[0]["value"]
+
+        if probe_group:
+            default_probe = probe_group[0]["value"]
 
         menu = html.Div([
             html.Div([
@@ -88,13 +98,12 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                                 min=1,
                                 max=24,
                                 step=1,
-                                value=[12, 22],
+                                value=[23, 24],
                                 marks={
-                                    2: "23 hours ago",
-                                    7: "18 horus ago",
-                                    12: "13 horus ago",
-                                    17: "8 horus ago",
-                                    22: "3 horus ago"})],
+                                    2: "22 hours ago",
+                                    9: "15 hours ago",
+                                    16: "8 hours ago",
+                                    23: "1 horus ago"})],
                      style=dict(width="100%",
                                 marginTop="2%")),
 
@@ -102,6 +111,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                 "Filter by authoritative server:",
                 doc.Dropdown(id="main-content-menu-filter_authoritatives",
                              options=authoritative_group,
+                             value=default_authoritative,
                              multi=False)
             ], style=dict(display="inline-block",
                           width="48%",
@@ -114,6 +124,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                 "Filter by measurer:",
                 doc.Dropdown(id="main-content-menu-filter_probe",
                              options=probe_group,
+                             value=default_probe,
                              multi=False),
             ], style=dict(display="inline-block",
                           width="48%",
@@ -127,42 +138,9 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
 
     def make_graph(self):
 
-        # TODO: 正しく実装
-        trace1 = go.Scatter(mode="lines",
-                            x=[datetime.datetime(2019, 2, 1, 15, 30, 10),
-                               datetime.datetime(2019, 2, 1, 15, 31, 10),
-                               datetime.datetime(2019, 2, 1, 15, 32, 10),
-                               datetime.datetime(2019, 2, 1, 15, 33, 10),
-                               datetime.datetime(2019, 2, 1, 15, 34, 10)],
-                            y=[0.022,
-                               0.02,
-                               0.05,
-                               0.18,
-                               0.42],
-                            name="UDP over IPv4")
-
-        trace2 = go.Scatter(mode="lines",
-                            x=[datetime.datetime(2019, 2, 1, 15, 30, 10),
-                               datetime.datetime(2019, 2, 1, 15, 31, 10),
-                               datetime.datetime(2019, 2, 1, 15, 32, 10),
-                               datetime.datetime(2019, 2, 1, 15, 33, 10),
-                               datetime.datetime(2019, 2, 1, 15, 34, 10)],
-                            y=[0.122,
-                               0.02,
-                               0.49,
-                               0.18,
-                               0.02],
-                            name="UDP over IPv6")
-
-        data = [trace1, trace2]
-
         graph = html.Div([
-            doc.Graph(id='main-content-graph-example',
-                      figure=dict(data=data,
-                                  layout=go.Layout(title="m.root-servers.net",
-                                                   xaxis=dict(title="time"),
-                                                   yaxis=dict(title="RTT"),
-                                                   )))
+            doc.Graph(id='main-content-graph-figure',
+                      figure=dict())
         ], id="main-content-graph")
 
         return graph
@@ -208,6 +186,46 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                           border="1px solid #eee",
                           bacgroundColor="#ffffff"))])
 
+    def __convert_range_index_to_datetime(self, time_range):
+
+        upper = 24
+        seconds_for_hour = 3600
+        current_time = datetime.datetime.now()
+        start_index, end_index = time_range
+
+        start_time = current_time - datetime.timedelta(
+            seconds=(upper - start_index) * seconds_for_hour)
+        end_time = current_time - datetime.timedelta(
+            seconds=(upper - end_index) * seconds_for_hour)
+
+        return start_time, end_time
+
+    def __get_af_proto_combination(self, dns_server_name, probe_name):
+
+        ret_af = self.session.query(
+            "show tag values with key = af where \
+             dst_name = $dst_name and prb_id = $prb_id",
+            params=dict(params=json.dumps(dict(dst_name=dns_server_name,
+                                               prb_id=probe_name))))
+
+        ret_proto = self.session.query(
+            "show tag values with key = proto where \
+             dst_name = $dst_name and prb_id = $prb_id",
+            params=dict(params=json.dumps(dict(dst_name=dns_server_name,
+                                               prb_id=probe_name))))
+
+        result = []
+
+        for afs in ret_af:
+            for af in afs:
+                af_value = af["value"]
+                for prots in ret_proto:
+                    for proto in prots:
+                        proto_value = proto["value"]
+                        result.append((af_value, proto_value))
+
+        return result
+
     def set_callbacks(self):
 
         @self.application.server.route(os.path.join(
@@ -230,6 +248,64 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                 self.logger.warning("exception while loading css \"%s\"" %
                                     str(stylesheet))
                 abort(404)
+
+        @self.application.callback(
+            Output("main-content-graph-figure", "figure"),
+            [Input("main-content-menu-filter_measurement_time", "value"),
+             Input("main-content-menu-filter_authoritatives", "value"),
+             Input("main-content-menu-filter_probe", "value")])
+        def update_graph(time_range, dns_server_name, probe_name):
+
+            if (time_range is None) or \
+                    (dns_server_name is None) or \
+                    (probe_name is None) or \
+                    not time_range:
+                return dict()
+
+            title = sanitizer.escape("Measurement %s from %s" %
+                                     (dns_server_name, probe_name))
+
+            start_time, end_time = \
+                self.__convert_range_index_to_datetime(time_range)
+
+            af_proto_combination = \
+                self.__get_af_proto_combination(dns_server_name, probe_name)
+
+            traces = []
+            for (af, proto) in af_proto_combination:
+
+                ret = self.session.query(
+                    "select time,time_took from dnsprobe where \
+                     dst_name = $dst_name and \
+                     prb_id = $prb_id and \
+                     got_response = 'True' and \
+                     af = $af and \
+                     proto = $proto",
+                    params=dict(params=json.dumps(
+                        dict(dst_name=dns_server_name,
+                             prb_id=probe_name,
+                             af=af,
+                             proto=proto))))
+
+                x = []
+                y = []
+                for records in ret:
+                    for data in records:
+                        x.append(data["time"])
+                        y.append(data["time_took"])
+
+                traces.append(go.Scatter(mode="lines",
+                                         x=x,
+                                         y=y,
+                                         name="%s over IPv%s" % (proto, af)))
+
+            figure = dict(data=traces,
+                          layout=go.Layout(
+                              title=title,
+                              xaxis=dict(title="Time"),
+                              yaxis=dict(title="Round Trip Time(second)")))
+
+            return figure
 
     def run(self):
         self.application = dash.Dash(__name__)
