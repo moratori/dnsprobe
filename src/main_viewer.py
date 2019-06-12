@@ -186,11 +186,11 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                           border="1px solid #eee",
                           bacgroundColor="#ffffff"))])
 
-    def __convert_range_index_to_datetime(self, time_range):
+    def __convert_range_index_to_time(self, time_range):
 
         upper = 24
         seconds_for_hour = 3600
-        current_time = datetime.datetime.now()
+        current_time = datetime.datetime.utcnow()
         start_index, end_index = time_range
 
         start_time = current_time - datetime.timedelta(
@@ -198,7 +198,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
         end_time = current_time - datetime.timedelta(
             seconds=(upper - end_index) * seconds_for_hour)
 
-        return start_time, end_time
+        return start_time.isoformat() + "Z", end_time.isoformat() + "Z"
 
     def __get_af_proto_combination(self, dns_server_name, probe_name):
 
@@ -266,10 +266,12 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                                      (dns_server_name, probe_name))
 
             start_time, end_time = \
-                self.__convert_range_index_to_datetime(time_range)
+                self.__convert_range_index_to_time(time_range)
 
             af_proto_combination = \
                 self.__get_af_proto_combination(dns_server_name, probe_name)
+
+            self.logger.debug("time range %s to %s" % (start_time, end_time))
 
             traces = []
             for (af, proto) in af_proto_combination:
@@ -280,12 +282,16 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                      prb_id = $prb_id and \
                      got_response = 'True' and \
                      af = $af and \
-                     proto = $proto",
+                     proto = $proto and \
+                     $start_time < time and \
+                     time < $end_time",
                     params=dict(params=json.dumps(
                         dict(dst_name=dns_server_name,
                              prb_id=probe_name,
                              af=af,
-                             proto=proto))))
+                             proto=proto,
+                             start_time=start_time,
+                             end_time=end_time))))
 
                 x = []
                 y = []
@@ -302,8 +308,8 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
             figure = dict(data=traces,
                           layout=go.Layout(
                               title=title,
-                              xaxis=dict(title="Time"),
-                              yaxis=dict(title="Round Trip Time(second)")))
+                              xaxis=dict(title="UTC Time"),
+                              yaxis=dict(title="Round Trip Time(ms)")))
 
             return figure
 
