@@ -273,7 +273,7 @@ class Measurer(framework.SetupwithInfluxdb):
             self.logger.warning("%s" % str(ex))
             err = ex
         finally:
-            time_diff = time.time() - start_at
+            time_diff = (time.time() - start_at) * 1000
 
         writable = self.converter.convert_influx_notation(current_time,
                                                           time_diff,
