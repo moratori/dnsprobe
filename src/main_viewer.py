@@ -22,6 +22,9 @@ from flask import abort, Response
 from werkzeug.routing import BaseConverter
 
 
+SLV = None
+
+
 class RegexConverter(BaseConverter):
     def __init__(self, url_map, *items):
         super(RegexConverter, self).__init__(url_map)
@@ -36,11 +39,13 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
     def setup_commandline_argument(self):
         argument_parser = argparse.ArgumentParser()
 
-        argument_parser.add_argument("host",
+        argument_parser.add_argument("--host",
                                      type=str,
+                                     default="0.0.0.0",
                                      help="host to bind")
-        argument_parser.add_argument("port",
-                                     type=str,
+        argument_parser.add_argument("--port",
+                                     type=int,
+                                     default=8080,
                                      help="port to bind")
         argument_parser.add_argument("--debug",
                                      action="store_true",
@@ -313,7 +318,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
 
             return figure
 
-    def run(self):
+    def setup_app(self):
         self.application = dash.Dash(__name__)
         self.application.server.url_map.converters['regex'] = RegexConverter
         self.application.css.config.serve_locally = self.args.offline
@@ -322,18 +327,38 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
         self.set_layout()
         self.set_callbacks()
 
+    def run(self):
+        self.setup_app()
         self.application.run_server(debug=self.args.debug,
                                     host=self.args.host,
                                     port=self.args.port)
 
 
-if __name__ == "__main__":
-
+def nakedserver():
     try:
-        mc = ServiceLevelViewer()
-        mc.start()
+        slv = ServiceLevelViewer()
+        slv.start()
     except Exception:
         # LOGGERのセットアップ自体にも失敗している可能性ありの為
         # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
+
+
+def wsgiserver(*positional, **kw):
+    global SLV
+    try:
+        if SLV is None:
+            slv = ServiceLevelViewer()
+            slv.setup_app()
+            SLV = slv
+        return SLV.application.server(*positional, **kw)
+    except Exception:
+        # LOGGERのセットアップ自体にも失敗している可能性ありの為
+        # 標準出力にログ出力
+        print(traceback.format_exc())
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    nakedserver()
