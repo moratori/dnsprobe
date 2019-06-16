@@ -135,8 +135,7 @@ class Measurer(framework.SetupwithInfluxdb):
         super().__init__(__name__, __file__)
         self.__set_measurer_id()
         self.__set_global_ipaddress()
-# todo: 下行をコメントアウトを消す
-#        self.__validate_id()
+        self.__validate_id()
         self.__load_measurement_info()
         self.converter = MeasurementDataConverter(self.logger,
                                                   self.cnfg,
@@ -369,11 +368,6 @@ if __name__ == "__main__":
     try:
         measurer = Measurer()
         measurer.converter.add_record_parser("jp", "SOA", soa_parser)
-        measurer.converter.add_record_parser("jp", "NS", ns_parser)
-
-        # todo: 以下を削除すること
-        measurer.ipv4 = "10.0.2.15"
-
     except Exception:
         # LOGGERのセットアップ自体にも失敗している可能性ありの為
         # 標準出力にログ出力
