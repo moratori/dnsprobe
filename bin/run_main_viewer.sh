@@ -30,12 +30,12 @@ pipenv run uwsgi \
         --manage-script-name \
         --chdir "${SOURCES}" \
         --mount "/=${script_name}:${wsgi_entry}" \
-        --chmod-socket=777
-return_code=$?
+        --chmod-socket=777 > /dev/null 2>&1 &
 
-
-## If exclusive control is required, please comment out the following
-#rm "${LOCKS}/${SELF}"
-
-exit $return_code
-
+#return_code=$?
+#
+#
+### If exclusive control is required, please comment out the following
+##rm "${LOCKS}/${SELF}"
+#
+#exit $return_code
