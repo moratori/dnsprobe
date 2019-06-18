@@ -153,7 +153,11 @@ class Measurer(framework.SetupwithInfluxdb):
         selected_ipv6 = None
 
         for interface in netifaces.interfaces():
-            addrs = netifaces.ifaddresses(interface)[netifaces.AF_INET]
+            ifaddresses = netifaces.ifaddresses(interface)
+            if netifaces.AF_INET in ifaddresses:
+                addrs = ifaddresses[netifaces.AF_INET]
+            else:
+                continue
             for addr in addrs:
                 if "addr" not in addr:
                     continue
