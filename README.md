@@ -22,7 +22,7 @@
 * MariaDB10.0.38がインスートされていること（Managerとして動かす場合）
 * IPv4/v6グローバルアドレスがそれぞれ付与されていること（Measurerとして動かす場合）
 
-#### 実行環境を`pipenv`で構築する。
+#### 実行環境をpipenvで構築する。
 
 ```
 $ git clone https://github.com/moratori/dnsprobe.git
