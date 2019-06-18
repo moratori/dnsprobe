@@ -1,6 +1,6 @@
 *.pyc
 .venv/
-logs/
+logs/*.log
 conf/
 static/data/*.json
 Pipfile.lock
