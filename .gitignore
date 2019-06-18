@@ -1,8 +1,6 @@
 *.pyc
-jobs/locks
 .venv/
 logs/
-db/
 conf/
 static/
 Pipfile.lock
