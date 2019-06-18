@@ -162,7 +162,13 @@ class Measurer(framework.SetupwithInfluxdb):
             for addr in addrs:
                 if "addr" not in addr:
                     continue
-                addr_obj = ipaddress.ip_address(addr["addr"])
+                try:
+                    addr_obj = ipaddress.ip_address(addr["addr"])
+                except Exception as ex:
+                    self.logger.warning(
+                        "exception occurred while converting addr: %s" %
+                        str(ex))
+                    continue
                 if addr_obj.is_global:
                     canonical_addrs.append(addr_obj)
 
