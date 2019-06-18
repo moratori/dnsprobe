@@ -154,10 +154,11 @@ class Measurer(framework.SetupwithInfluxdb):
 
         for interface in netifaces.interfaces():
             ifaddresses = netifaces.ifaddresses(interface)
+            addrs = []
             if netifaces.AF_INET in ifaddresses:
-                addrs = ifaddresses[netifaces.AF_INET]
-            else:
-                continue
+                addrs.extend(ifaddresses[netifaces.AF_INET])
+            if netifaces.AF_INET6 in ifaddresses:
+                addrs.extend(ifaddresses[netifaces.AF_INET6])
             for addr in addrs:
                 if "addr" not in addr:
                     continue
