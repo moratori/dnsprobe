@@ -2,5 +2,5 @@
 .venv/
 logs/
 conf/
-static/
+static/data/*.json
 Pipfile.lock
