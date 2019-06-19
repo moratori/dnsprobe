@@ -178,12 +178,12 @@ class Measurer(framework.SetupwithInfluxdb):
 
         for each in canonical_addrs:
             if each.version == 4:
-                selected_ipv4 = each
+                selected_ipv4 = str(each)
                 break
 
         for each in canonical_addrs:
             if each.version == 6:
-                selected_ipv6 = each
+                selected_ipv6 = str(each)
                 break
 
         self.logger.info("selected ipv4 address: %s" % (selected_ipv4))
