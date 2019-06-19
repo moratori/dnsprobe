@@ -145,7 +145,11 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
 
         graph = html.Div([
             doc.Graph(id='main-content-graph-figure',
-                      figure=dict())
+                      figure=dict()),
+            doc.Interval(
+                id="main-content-graph-interval",
+                interval=30*1000,
+                n_intervals=0)
         ], id="main-content-graph")
 
         return graph
@@ -258,8 +262,9 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
             Output("main-content-graph-figure", "figure"),
             [Input("main-content-menu-filter_measurement_time", "value"),
              Input("main-content-menu-filter_authoritatives", "value"),
-             Input("main-content-menu-filter_probe", "value")])
-        def update_graph(time_range, dns_server_name, probe_name):
+             Input("main-content-menu-filter_probe", "value"),
+             Input("main-content-graph-interval", "n_intervals")])
+        def update_graph(time_range, dns_server_name, probe_name, n_intervals):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
@@ -323,6 +328,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
         self.application.server.url_map.converters['regex'] = RegexConverter
         self.application.css.config.serve_locally = self.args.offline
         self.application.scripts.config.serve_locally = self.args.offline
+        self.application.title = "RTT monitor"
 
         self.set_layout()
         self.set_callbacks()
