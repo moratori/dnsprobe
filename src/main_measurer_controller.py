@@ -15,6 +15,9 @@ import flask
 from flask import render_template
 
 
+MC = None
+
+
 class MeasurerController(framework.SetupwithMySQLdb):
 
     def __init__(self):
@@ -74,8 +77,7 @@ class MeasurerController(framework.SetupwithMySQLdb):
         self.server.run(host=self.args.host, port=self.args.port)
 
 
-if __name__ == "__main__":
-
+def nakedserver():
     try:
         mc = MeasurerController()
         mc.start()
@@ -84,3 +86,21 @@ if __name__ == "__main__":
         # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
+
+
+def wsgiserver(*positional, **kw):
+    global MC
+    try:
+        if MC is None:
+            mc = MeasurerController()
+            MC = mc
+        return MC.server(*positional, **kw)
+    except Exception:
+        # LOGGERのセットアップ自体にも失敗している可能性ありの為
+        # 標準出力にログ出力
+        print(traceback.format_exc())
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    nakedserver()
