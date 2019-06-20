@@ -103,7 +103,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                                 min=1,
                                 max=24,
                                 step=1,
-                                value=[23, 24],
+                                value=[21, 24],
                                 marks={
                                     2: "22 hours ago",
                                     9: "15 hours ago",
