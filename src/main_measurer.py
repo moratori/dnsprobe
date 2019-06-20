@@ -202,13 +202,15 @@ class Measurer(framework.SetupwithInfluxdb):
         protocol = self.cnfs.controller.protocol
         host = self.cnfs.controller.host
         port = self.cnfs.controller.port
+        user = self.cnfs.controller.user
+        passwd = self.cnfs.controller.passwd
         path = self.cnfs.controller.path
 
         controller = "%s://%s:%s%s" % (protocol, host, port, path)
         self.logger.info("controller: %s" % (controller))
 
         try:
-            response = requests.get(controller)
+            response = requests.get(controller, auth=(user, passwd))
         except requests.RequestException as ex:
             self.logger.error("unexpected error occurred: %s" % (str(ex)))
             sys.exit(1)
