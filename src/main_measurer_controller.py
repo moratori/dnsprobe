@@ -30,11 +30,13 @@ class MeasurerController(framework.SetupwithMySQLdb):
     def setup_commandline_argument(self):
         argument_parser = argparse.ArgumentParser()
 
-        argument_parser.add_argument("host",
+        argument_parser.add_argument("--host",
                                      type=str,
+                                     default="0.0.0.0",
                                      help="host to bind")
-        argument_parser.add_argument("port",
-                                     type=str,
+        argument_parser.add_argument("--port",
+                                     type=int,
+                                     default=8080,
                                      help="port to bind")
         argument_parser.add_argument("--debug",
                                      action="store_true",
