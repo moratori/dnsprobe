@@ -36,7 +36,7 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
         self.validate_commandline_argument()
 
     def run(self):
-        measurement_infos = self.retrieve_mesurement_info()
+        measurement_infos = self.retrieve_measurement_info()
         fullresolvers = [self.args.primary, self.args.secondary]
 
         result = self.construct_json_data(measurement_infos, fullresolvers)
@@ -80,7 +80,7 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
 
         return result
 
-    def retrieve_mesurement_info(self):
+    def retrieve_measurement_info(self):
         """
         DB より測定対象のホスト測定クエリ情報を取得する
         """
