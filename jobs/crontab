@@ -1,4 +1,4 @@
 # PATH=/path/to/python/interpreter
 # min hour day month dow command
-*/1 * * * * /path/to/dnsprobe/bin/run_main_mesurer.sh
+*/1 * * * * /path/to/dnsprobe/bin/run_main_measurer.sh
 0 */3 * * * /path/to/dnsprobe/bin/run_main_create_measurement_target.sh 8.8.8.8 1.1.1.1
