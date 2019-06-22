@@ -57,6 +57,87 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
         self.args = argument_parser.parse_args()
         self.validate_commandline_argument()
 
+    def __show_tag_list(self, tag):
+        # tag parameter MUST BE TRUSTED value
+        # unable to use `bind-parameter` for `with key` statement
+        ret = self.session.query("show tag values with key = %s" % (tag))
+        result = []
+        for each in ret:
+            for record in each:
+                result.append(record["value"])
+        return result
+
+    def __make_authoritative_group(self):
+        ret = self.__show_tag_list("dst_name")
+        result = [dict(label=each, value=each) for each in ret]
+        return result
+
+    def __make_probe_group(self):
+        ret = self.__show_tag_list("prb_id")
+        result = [dict(label=each, value=each) for each in ret]
+        return result
+
+    def __make_probe_locations(self):
+        probe_list = self.__show_tag_list("prb_id")
+        lats = []
+        lons = []
+        for prb_id in probe_list:
+            ret = self.session.query("show tag values with key in \
+                                      (prb_lat, prb_lon) where \
+                                      prb_id = $prb_id",
+                                     params=dict(params=json.dumps(
+                                         dict(prb_id=prb_id))))
+            for each in ret:
+                for record in each:
+                    key = record["key"]
+                    value = record["value"]
+                    if key == "prb_lat":
+                        lats.append(value)
+                    if key == "prb_lon":
+                        lons.append(value)
+
+        return probe_list, lats, lons
+
+    def __convert_range_index_to_time(self, time_range):
+
+        upper = 24
+        seconds_for_hour = 3600
+        current_time = datetime.datetime.utcnow()
+        start_index, end_index = time_range
+
+        start_time = current_time - datetime.timedelta(
+            seconds=(upper - start_index) * seconds_for_hour)
+        end_time = current_time - datetime.timedelta(
+            seconds=(upper - end_index) * seconds_for_hour)
+
+        return start_time.isoformat() + "Z", end_time.isoformat() + "Z"
+
+    def __get_af_proto_combination(self, dns_server_name, probe_name):
+
+        ret_af = self.session.query(
+            "show tag values with key = af where \
+             dst_name = $dst_name and prb_id = $prb_id",
+            params=dict(params=json.dumps(dict(dst_name=dns_server_name,
+                                               prb_id=probe_name))))
+
+        ret_proto = self.session.query(
+            "show tag values with key = proto where \
+             dst_name = $dst_name and prb_id = $prb_id",
+            params=dict(params=json.dumps(dict(dst_name=dns_server_name,
+                                               prb_id=probe_name))))
+
+        result = []
+
+        for afs in ret_af:
+            for af in afs:
+                af_value = af["value"]
+                for prots in ret_proto:
+                    for proto in prots:
+                        proto_value = proto["value"]
+                        result.append((af_value, proto_value))
+
+        return result
+
     def make_header(self):
 
         header = html.Div([
@@ -64,24 +145,6 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
         ], id="main-content-header")
 
         return header
-
-    def __make_authoritative_group(self):
-        ret = self.session.query("show tag values with key = dst_name")
-        result = []
-        for each in ret:
-            for record in each:
-                dst_name = record["value"]
-                result.append(dict(label=dst_name, value=dst_name))
-        return result
-
-    def __make_probe_group(self):
-        ret = self.session.query("show tag values with key = prb_id")
-        result = []
-        for each in ret:
-            for record in each:
-                dst_name = record["value"]
-                result.append(dict(label=dst_name, value=dst_name))
-        return result
 
     def make_menu(self):
 
@@ -144,13 +207,60 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
     def make_graph(self):
 
         graph = html.Div([
-            doc.Graph(id='main-content-graph-figure',
-                      figure=dict()),
+            doc.Graph(id="main-content-graph-figure",
+                      figure=dict(),
+                      style=dict(height=600),
+                      config=dict(displayModeBar=False)
+                      ),
             doc.Interval(
                 id="main-content-graph-interval",
                 interval=30*1000,
-                n_intervals=0)
-        ], id="main-content-graph")
+                n_intervals=0),
+        ], style=dict(display="block"), id="main-content-graph")
+
+        return graph
+
+    def make_map(self):
+
+        map_height = 1100
+        scale = 1
+        center_lat = 25
+        center_lon = 90
+        region = "asia"
+        title = "Location of Probes"
+
+        probe_location_name, latitudes, longitudes = \
+            self.__make_probe_locations()
+
+        data = [go.Scattergeo(lon=longitudes,
+                              lat=latitudes,
+                              text=probe_location_name,
+                              mode="markers",
+                              marker=dict(size=13,
+                                          symbol="circle"))]
+
+        layout = go.Layout(title=title,
+                           height=map_height,
+                           geo=dict(scope=region,
+                                    projection=dict(type="equirectangular",
+                                                    scale=scale),
+                                    showland=True,
+                                    resolution=50,
+                                    center=dict(lat=center_lat,
+                                                lon=center_lon),
+                                    landcolor="rgb(235, 235, 235)",
+                                    countrywidth=0.3,
+                                    subunitwidth=0.3))
+
+        graph = html.Div([doc.Graph("main-content-map-figure",
+                                    figure=dict(data=data,
+                                                layout=layout),
+                                    config=dict(displayModeBar=False))
+                          ], style=dict(display="block",
+                                        marginTop="2%",
+                                        marginLeft="auto",
+                                        marginRight="auto"),
+                         id="main-content-map")
 
         return graph
 
@@ -183,57 +293,18 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                 html.Div([
                     self.make_header(),
                     self.make_menu(),
-                    self.make_graph()
+                    self.make_graph(),
+                    self.make_map()
                 ], style=dict(id="main-content",
                               width="96%",
                               margin="auto"))
             ], id="main",
                style=dict(margin="auto",
                           marginTop="2%",
-                          width="90%",
+                          width="96%",
                           boxShadow="0px 0px 3px",
                           border="1px solid #eee",
                           bacgroundColor="#ffffff"))])
-
-    def __convert_range_index_to_time(self, time_range):
-
-        upper = 24
-        seconds_for_hour = 3600
-        current_time = datetime.datetime.utcnow()
-        start_index, end_index = time_range
-
-        start_time = current_time - datetime.timedelta(
-            seconds=(upper - start_index) * seconds_for_hour)
-        end_time = current_time - datetime.timedelta(
-            seconds=(upper - end_index) * seconds_for_hour)
-
-        return start_time.isoformat() + "Z", end_time.isoformat() + "Z"
-
-    def __get_af_proto_combination(self, dns_server_name, probe_name):
-
-        ret_af = self.session.query(
-            "show tag values with key = af where \
-             dst_name = $dst_name and prb_id = $prb_id",
-            params=dict(params=json.dumps(dict(dst_name=dns_server_name,
-                                               prb_id=probe_name))))
-
-        ret_proto = self.session.query(
-            "show tag values with key = proto where \
-             dst_name = $dst_name and prb_id = $prb_id",
-            params=dict(params=json.dumps(dict(dst_name=dns_server_name,
-                                               prb_id=probe_name))))
-
-        result = []
-
-        for afs in ret_af:
-            for af in afs:
-                af_value = af["value"]
-                for prots in ret_proto:
-                    for proto in prots:
-                        proto_value = proto["value"]
-                        result.append((af_value, proto_value))
-
-        return result
 
     def set_callbacks(self):
 
@@ -325,7 +396,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
 
     def setup_app(self):
         self.application = dash.Dash(__name__)
-        self.application.server.url_map.converters['regex'] = RegexConverter
+        self.application.server.url_map.converters["regex"] = RegexConverter
         self.application.css.config.serve_locally = self.args.offline
         self.application.scripts.config.serve_locally = self.args.offline
         self.application.title = "RTT monitor"
