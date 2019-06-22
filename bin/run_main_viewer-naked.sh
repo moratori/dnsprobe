@@ -20,12 +20,10 @@ cd ${PROJECT_ROOT}
 #fi
 
 
-pipenv run ${SOURCES}/main_viewer.py $@ > /dev/null 2>&1 &
+pipenv run ${SOURCES}/main_viewer.py $@
+return_code=$?
 
-#return_code=$?
-#
-#
 ### If exclusive control is required, please comment out the following
 ##rm "${LOCKS}/${SELF}"
-#
-#exit $return_code
+
+exit $return_code
