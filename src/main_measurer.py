@@ -89,6 +89,8 @@ class MeasurementDataConverter():
                                 dst_name=nameserver,
                                 src_addr=src,
                                 prb_id=prb_id,
+                                prb_lat=self.cnfs.measurement.latitude,
+                                prb_lon=self.cnfs.measurement.longitude,
                                 proto=proto,
                                 rrtype=rrtype,
                                 qname=qname,
