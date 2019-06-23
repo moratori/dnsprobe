@@ -2,6 +2,8 @@
 
 ![sample graph](graph.jpg)
 
+[https://dnssl.mtcq.jp/](https://dnssl.mtcq.jp/)
+
 ## 概要
 
 権威DNSサーバーのRTTを測定し表示するシステムです。
