@@ -4,27 +4,25 @@
 
 [https://dnssl.mtcq.jp/](https://dnssl.mtcq.jp/)
 
-## 概要
+## Abstract
 
-権威DNSサーバーのRTTを測定し表示するシステムです。
-
-プローブが権威DNSサーバーに定期的に問い合わせを行い、RTTを測定します。
+This system is a RTT monitor for authoritative DNS Server.
+Multiple probes deployed around the world like RIPE Atlas is measuring target authoritative DNS servers.
+(But currently we have only one probe...)
 
 ![architecture](architecture.jpg)
 
 
+## Installation
 
-## インストール
+#### Prerequirements
 
-#### 前提
+* Python3.7(pipenv)
+* InfluxDB1.7.6(for manager)
+* MariaDB10.0.38(for manager)
+* Probes must have IPv4/v6 address(for measurer)
 
-* Python3.7系がインストールされていること
-* pipenvがインストールされていること
-* InfluxDB1.7.6がインストールされていること（Managerとして動かす場合）
-* MariaDB10.0.38がインスートされていること（Managerとして動かす場合）
-* IPv4/v6グローバルアドレスがそれぞれ付与されていること（Measurerとして動かす場合）
-
-#### 実行環境をpipenvで構築する。
+#### Make environment using pipenv
 
 ```
 $ git clone https://github.com/moratori/dnsprobe.git
@@ -32,11 +30,11 @@ $ cd dnsprobe && pipenv install
 ```
 
 
-#### Managerとして動かす場合
+#### Run as Manager
 
 (TBD)
 
 
-#### Measurerとして動かす場合
+#### Run as Measurer
 
 (TBD)
