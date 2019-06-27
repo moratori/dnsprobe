@@ -68,19 +68,20 @@ class MeasurementDataConverter():
                                 proto,
                                 qname,
                                 rrtype,
-                                res):
+                                result):
 
         measurement_name = self.cnfg.data_store.database
 
-        (err, con) = res
+        (err, response) = result
 
         if err:
-            field_data = dict(reason=str(err),
-                              time_took=time_diff)
+            field_data = dict(reason=str(err))
+            error_class_name = err.__class__.__name__
         else:
-            parsed = self.parse_response_to_fields(qname, rrtype, con)
-            parsed["time_took"] = time_diff
-            field_data = parsed
+            field_data = self.parse_response_to_fields(qname, rrtype, response)
+            error_class_name = ""
+
+        field_data.update(dict(time_took=time_diff))
 
         result = dict(measurement=measurement_name,
                       time=current_time,
@@ -94,7 +95,8 @@ class MeasurementDataConverter():
                                 proto=proto,
                                 rrtype=rrtype,
                                 qname=qname,
-                                got_response=err is None),
+                                got_response=err is None,
+                                error_class_name=error_class_name),
                       fields=field_data)
 
         return result
@@ -269,13 +271,13 @@ class Measurer(framework.SetupwithInfluxdb):
                            rrtype,
                            qo):
 
-        res = None
+        response = None
         err = None
 
         start_at = time.time()
 
         try:
-            res = queryer(qo, dst, timeout=timeout, source=src)
+            response = queryer(qo, dst, timeout=timeout, source=src)
         except dns.exception.Timeout as ex:
             self.logger.warning("timeout while measurement: %s" % str(ex))
             err = ex
@@ -299,7 +301,7 @@ class Measurer(framework.SetupwithInfluxdb):
                                                           proto,
                                                           qname,
                                                           rrtype,
-                                                          (err, res))
+                                                          (err, response))
         return writable
 
     def measure_toplevel(self):
