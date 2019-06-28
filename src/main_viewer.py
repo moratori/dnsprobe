@@ -52,6 +52,7 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                                      help="whether to set debug mode")
         argument_parser.add_argument("--offline",
                                      action="store_true",
+                                     default=True,
                                      help="disable loading resources from cdn")
 
         self.args = argument_parser.parse_args()
@@ -233,11 +234,14 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
     def make_map(self):
 
         map_height = 1100
-        scale = 1
-        center_lat = 25
-        center_lon = 90
-        region = "asia"
-        title = "Location of Probes"
+        map_scale = 1
+        map_center_lat = 25
+        map_center_lon = 90
+        map_region = "asia"
+        map_title = "Location of Probes"
+        map_land_color = "rgb(235, 235, 235)"
+        map_resolution = 50
+        map_projection_type = "equirectangular"
 
         probe_location_name, latitudes, longitudes = \
             self.__make_probe_locations()
@@ -249,16 +253,16 @@ class ServiceLevelViewer(framework.SetupwithInfluxdb):
                               marker=dict(size=13,
                                           symbol="circle"))]
 
-        layout = go.Layout(title=title,
+        layout = go.Layout(title=map_title,
                            height=map_height,
-                           geo=dict(scope=region,
-                                    projection=dict(type="equirectangular",
-                                                    scale=scale),
+                           geo=dict(scope=map_region,
+                                    projection=dict(type=map_projection_type,
+                                                    scale=map_scale),
                                     showland=True,
-                                    resolution=50,
-                                    center=dict(lat=center_lat,
-                                                lon=center_lon),
-                                    landcolor="rgb(235, 235, 235)",
+                                    resolution=map_resolution,
+                                    center=dict(lat=map_center_lat,
+                                                lon=map_center_lon),
+                                    landcolor=map_land_color,
                                     countrywidth=0.3,
                                     subunitwidth=0.3))
 
