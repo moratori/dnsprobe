@@ -12,9 +12,9 @@ SELF="`basename $0`"
 
 cd ${PROJECT_ROOT}
 
-unix_sock="/tmp/dnsprobe_viewer.sock"
+unix_sock="/tmp/dnsprobe_rttviewer.sock"
 wsgi_entry="wsgiserver"
-script_name="main_viewer"
+script_name="main_rttviewer"
 
 
 ## If exclusive control is required, please comment out the following

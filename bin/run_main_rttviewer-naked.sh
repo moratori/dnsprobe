@@ -20,7 +20,7 @@ cd ${PROJECT_ROOT}
 #fi
 
 
-pipenv run ${SOURCES}/main_viewer.py $@
+pipenv run ${SOURCES}/main_rttviewer.py $@
 return_code=$?
 
 ### If exclusive control is required, please comment out the following
