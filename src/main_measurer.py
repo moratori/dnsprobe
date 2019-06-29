@@ -5,6 +5,7 @@ docstring is here
 """
 
 import common.common.framework as framework
+
 import requests
 import traceback
 import namedtupled
@@ -139,7 +140,7 @@ class Measurer(framework.SetupwithInfluxdb):
         super().__init__(__name__, __file__)
         self.__set_measurer_id()
         self.__set_global_ipaddress()
-#        self.__validate_id()
+        self.__validate_id()
         self.__load_measurement_info()
         self.converter = MeasurementDataConverter(self.logger,
                                                   self.cnfg,
@@ -385,7 +386,6 @@ if __name__ == "__main__":
     try:
         measurer = Measurer()
         measurer.converter.add_record_parser("jp", "SOA", soa_parser)
-        measurer.ipv4 = "10.0.2.15"
     except Exception:
         # LOGGERのセットアップ自体にも失敗している可能性ありの為
         # 標準出力にログ出力
