@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import enum
+
 from logging import getLogger
 
 LOGGER = getLogger(__name__)

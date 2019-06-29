@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import data.types as types
+import common.data.types as types
+
 import json
 
 from logging import getLogger

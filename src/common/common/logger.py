@@ -4,8 +4,10 @@
 ロガーのセットアップを行う
 """
 
-import common.config as config
+import common.common.config as config
+
 import os
+
 from logging import StreamHandler, basicConfig, getLogger
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG
 from logging.handlers import TimedRotatingFileHandler

@@ -4,8 +4,8 @@
 テーブルを定義する
 """
 
-import common.framework as framework
-import data.dao as dao
+import common.common.framework as framework
+import common.data.dao as dao
 
 import traceback
 import sys

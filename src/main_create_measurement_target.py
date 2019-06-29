@@ -4,11 +4,11 @@
 docstring is here
 """
 
-import common.config as config
-import common.framework as framework
-import data.types as types
-import data.dao as dao
-import resolver.rec_resolver as rec_resolver
+import common.common.config as config
+import common.common.framework as framework
+import common.data.types as types
+import common.data.dao as dao
+import common.resolver.rec_resolver as rec_resolver
 import traceback
 import os
 import sys

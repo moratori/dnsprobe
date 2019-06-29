@@ -4,9 +4,9 @@
 docstring is here
 """
 
-import common.config as config
-import common.framework as framework
-import data.dao as dao
+import common.common.config as config
+import common.common.framework as framework
+import common.data.dao as dao
 import traceback
 import sys
 import os

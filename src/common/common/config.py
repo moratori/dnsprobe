@@ -10,7 +10,7 @@ if __name__ != "__main__":
 
     PROJECT_ROOT = \
         os.path.dirname(os.path.abspath(os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "../")))
+            os.path.dirname(os.path.abspath(__file__)), "../../")))
 
     LOGS_DIR = os.path.join(PROJECT_ROOT, "logs")
     STATIC_DIR = os.path.join(PROJECT_ROOT, "static")

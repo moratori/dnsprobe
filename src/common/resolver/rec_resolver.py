@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import dns.resolver
+
 from logging import getLogger
 
 LOGGER = getLogger(__name__)

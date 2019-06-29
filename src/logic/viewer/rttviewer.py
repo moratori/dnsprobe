@@ -4,17 +4,27 @@
 docstring is here
 """
 
-import os
-import common.config as config
-import json
-import datetime
+import common.common.config as config
 import plotly.graph_objs as go
 import html as snt
+
+import os
+import json
+import datetime
+
 from dash.dependencies import Input, Output
 from flask import abort, Response
 from logging import getLogger
+from werkzeug.routing import BaseConverter
+
 
 LOGGER = getLogger(__name__)
+
+
+class RegexConverter(BaseConverter):
+    def __init__(self, url_map, *items):
+        super(RegexConverter, self).__init__(url_map)
+        self.regex = items[0]
 
 
 class RTTViewerLogic():

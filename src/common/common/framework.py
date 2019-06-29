@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import common.logger as logger
-import common.config as config
+import common.common.logger as logger
+import common.common.config as config
 
 import os
 import argparse

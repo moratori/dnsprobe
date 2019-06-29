@@ -4,28 +4,22 @@
 docstring is here
 """
 
-import os
-import common.config as config
-import common.framework as framework
-import data.dao as dao
-import logic.viewer.rttviewer as rttviewer
-import traceback
-import sys
-import argparse
-import dash
+import common.common.config as config
+import common.common.framework as framework
+import common.data.dao as dao
+import logic.viewer.rttviewer as rttviewerlogic
 import dash_html_components as html
 import dash_core_components as doc
 import plotly.graph_objs as go
-from werkzeug.routing import BaseConverter
+
+import traceback
+import os
+import sys
+import argparse
+import dash
 
 
 SLV = None
-
-
-class RegexConverter(BaseConverter):
-    def __init__(self, url_map, *items):
-        super(RegexConverter, self).__init__(url_map)
-        self.regex = items[0]
 
 
 class RTTViewer(framework.SetupwithInfluxdb):
@@ -33,7 +27,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
     def __init__(self):
         super().__init__(__name__, __file__)
         self.dao_dnsprobe = dao.Dnsprobe(self)
-        self.logic = rttviewer.RTTViewerLogic(self)
+        self.logic = rttviewerlogic.RTTViewerLogic(self)
 
     def setup_commandline_argument(self):
         argument_parser = argparse.ArgumentParser()
@@ -240,7 +234,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
     def setup_app(self):
         self.application = dash.Dash(__name__)
-        self.application.server.url_map.converters["regex"] = RegexConverter
+        self.application.server.url_map.converters["regex"] = \
+            rttviewerlogic.RegexConverter
         self.application.css.config.serve_locally = self.args.offline
         self.application.scripts.config.serve_locally = self.args.offline
         self.application.title = "RTT monitor"
