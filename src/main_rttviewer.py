@@ -129,17 +129,16 @@ class RTTViewer(framework.SetupwithInfluxdb):
                      style=dict(display="inline-block",
                                 width="50%")),
             html.Div([
-                doc.Graph(id="main-content-tograph-figure",
+                doc.Graph(id="main-content-ratiograph-figure",
                           figure=dict(),
                           style=dict(height=600),
                           config=dict(displayModeBar=False))],
-                     id="main-content-tograph",
+                     id="main-content-ratiograph",
                      style=dict(display="inline-block",
                                 width="50%")),
             doc.Interval(id="main-content-graph-interval",
                          interval=30*1000,
-                         n_intervals=0)
-        ])
+                         n_intervals=0)])
 
         return graph
 
@@ -226,7 +225,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
                               margin="auto"))
             ], id="main",
                style=dict(margin="auto",
-                          marginTop="2%",
+                          marginTop="1%",
                           width="96%",
                           boxShadow="0px 0px 3px",
                           border="1px solid #eee",

@@ -11,6 +11,7 @@ import html as snt
 import os
 import json
 import datetime
+import math
 
 from dash.dependencies import Input, Output
 from flask import abort, Response
@@ -69,21 +70,20 @@ class RTTViewerLogic():
                 abort(404)
 
         @self.rttviewer.application.callback(
-            Output("main-content-tograph-figure", "figure"),
+            Output("main-content-ratiograph-figure", "figure"),
             [Input("main-content-menu-filter_measurement_time", "value"),
              Input("main-content-menu-filter_authoritatives", "value"),
              Input("main-content-menu-filter_probe", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_tograph(time_range, dns_server_name, probe_name, cnt):
+        def update_ratiograph(time_range, dns_server_name, probe_name, cnt):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
                     (probe_name is None) or \
                     not time_range:
-                LOGGER.warning("lack of argument for update_tograph")
+                LOGGER.warning("lack of argument for update_ratiograph")
                 return dict()
 
-            title = "Number of error queries(e.g. timeout, no route to host)"
             start_time, end_time = \
                 self.__convert_range_index_to_time(time_range)
 
@@ -95,11 +95,23 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            xdata = []
-            ydata = []
-            for (af, proto) in af_proto_combination:
+            title = "error queries ratio(e.g. timeout, no route to host)"
+            labels = ["unanswered", "answered"]
+            donut_size = 0.4
+            hoverinfo = "label+percent+name"
+            row_tiling_num = 2
 
-                ret = self.rttviewer.session.query(
+            num_of_graphs = len(af_proto_combination)
+            rows = int(math.ceil(num_of_graphs / row_tiling_num))
+            columns = int(num_of_graphs if row_tiling_num >= num_of_graphs
+                          else row_tiling_num)
+
+            traces = []
+            for (n, (af, proto)) in enumerate(af_proto_combination):
+                r = int(n / row_tiling_num)
+                c = int(n % row_tiling_num)
+
+                unanswered = self.rttviewer.session.query(
                     "select count(time_took) from dnsprobe where \
                      got_response = 'False' and \
                      dst_name = $dst_name and \
@@ -116,25 +128,46 @@ class RTTViewerLogic():
                              start_time=start_time,
                              end_time=end_time))))
 
-                # influxdb のカウント(count)に纏わる仕様の補正の為に
-                # デフォルトで0を表示するようにする
-                # 上記クエリで所望の条件でカウントした際に、該当するレコードがない場合は
-                # 0件として扱ってほしい
-                # af_proto_combinationに入っているペアは、測定が実行されたことを示しているため
-                timeouted_count = 0
-                for records in ret:
-                    for data in records:
-                        timeouted_count = data["count"]
-                xdata.append(snt.escape("%s over IPv%s" % (proto, af)))
-                ydata.append(timeouted_count)
+                answered = self.rttviewer.session.query(
+                    "select count(time_took) from dnsprobe where \
+                     got_response = 'True' and \
+                     dst_name = $dst_name and \
+                     prb_id = $prb_id and \
+                     af = $af and \
+                     proto = $proto and \
+                     $start_time < time and \
+                     time < $end_time",
+                    params=dict(params=json.dumps(
+                        dict(dst_name=dns_server_name,
+                             prb_id=probe_name,
+                             af=af,
+                             proto=proto,
+                             start_time=start_time,
+                             end_time=end_time))))
 
-            figure = dict(data=[go.Bar(x=xdata, y=ydata)],
-                          layout=go.Layout(
-                              title=title,
-                              xaxis=dict(title="Measurement Target"),
-                              yaxis=dict(title="Number of error queries",
-                                         autorange=True,
-                                         rangemode="tozero")))
+                unanswered_count = 0
+                for records in unanswered:
+                    for data in records:
+                        unanswered_count = data["count"]
+                answered_count = 0
+                for records in answered:
+                    for data in records:
+                        answered_count = data["count"]
+
+                if (unanswered_count + answered_count) == 0:
+                    continue
+
+                traces.append(go.Pie(values=[unanswered_count, answered_count],
+                                     labels=labels,
+                                     domain=dict(row=r, column=c),
+                                     name=snt.escape("%s IPv%s" % (proto, af)),
+                                     hoverinfo=hoverinfo,
+                                     hole=donut_size))
+
+            figure = dict(data=traces,
+                          layout=dict(title=title,
+                                      grid=dict(rows=rows,
+                                                columns=columns)))
 
             return figure
 
