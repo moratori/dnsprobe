@@ -153,7 +153,6 @@ class Measurer(framework.SetupwithInfluxdb):
             binascii.crc32(hostname.encode("utf8")))
 
     def __set_global_ipaddress(self):
-        canonical_addrs = []
         selected_ipv4 = None
         selected_ipv6 = None
 
@@ -175,21 +174,18 @@ class Measurer(framework.SetupwithInfluxdb):
                         str(ex))
                     continue
                 if addr_obj.is_global:
-                    canonical_addrs.append(addr_obj)
-
-        canonical_addrs.sort(key=str)
-        self.logger.info("global ip addresses found for: %s" %
-                         (canonical_addrs))
-
-        for each in canonical_addrs:
-            if each.version == 4:
-                selected_ipv4 = str(each)
-                if selected_ipv6 is not None:
-                    break
-            elif each.version == 6:
-                selected_ipv6 = str(each)
-                if selected_ipv4 is not None:
-                    break
+                    ipadr = str(addr_obj)
+                    if addr_obj.version == 4 and selected_ipv4 is None:
+                        selected_ipv4 = ipadr
+                        if selected_ipv6 is not None:
+                            break
+                    elif addr_obj.version == 6 and selected_ipv6 is None:
+                        selected_ipv6 = ipadr
+                        if selected_ipv4 is not None:
+                            break
+            else:
+                continue
+            break
 
         self.logger.info("selected ipv4 address: %s" % (selected_ipv4))
         self.logger.info("selected ipv6 address: %s" % (selected_ipv6))
