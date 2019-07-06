@@ -184,12 +184,12 @@ class Measurer(framework.SetupwithInfluxdb):
         for each in canonical_addrs:
             if each.version == 4:
                 selected_ipv4 = str(each)
-                break
-
-        for each in canonical_addrs:
-            if each.version == 6:
+                if selected_ipv6 is not None:
+                    break
+            elif each.version == 6:
                 selected_ipv6 = str(each)
-                break
+                if selected_ipv4 is not None:
+                    break
 
         self.logger.info("selected ipv4 address: %s" % (selected_ipv4))
         self.logger.info("selected ipv6 address: %s" % (selected_ipv6))
