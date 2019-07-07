@@ -109,3 +109,24 @@ class Dnsprobe:
                         result.append((af_value, proto_value))
 
         return result
+
+    def write_measurement_data(self, measured_data):
+        ret = False
+
+        measurement_name = self.app.cnfg.data_store.database
+
+        try:
+            points = [each.convert_influx_notation(measurement_name)
+                      for each in measured_data]
+            LOGGER.info("writing data to influxdb")
+            ret = self.app.session.write_points(points)
+            if not ret:
+                LOGGER.warning("writing data to the influxdb failed")
+                LOGGER.debug("while writing followeing %s" % str(points))
+        except Exception as ex:
+            LOGGER.warning("%s occurred while writing" % str(ex))
+            LOGGER.debug("while writing following %s" % str(points))
+        finally:
+            pass
+
+        return ret

@@ -5,6 +5,8 @@ docstring is here
 """
 
 import common.common.framework as framework
+import common.data.dao as dao
+import common.data.types as types
 
 import requests
 import traceback
@@ -26,125 +28,15 @@ import dns.exception
 from multiprocessing.pool import ThreadPool
 
 
-class MeasurementDataConverter():
-
-    def __init__(self, logger, cnfg, cnfs):
-        self.record_parser = {}
-        self.logger = logger
-        self.cnfg = cnfg
-        self.cnfs = cnfs
-
-    def add_record_parser(self, qname, rtype, func):
-        self.record_parser[(qname, rtype)] = func
-
-    def parse_response_to_fields(self, qname, rtype, res):
-
-        if not (qname, rtype) in self.record_parser:
-            self.logger.warning("unable to find parser for %s %s" %
-                                (qname, rtype))
-            return {}
-
-        parser = self.record_parser[(qname, rtype)]
-
-        try:
-            qname_obj = dns.name.from_text(qname)
-            rtype_obj = dns.rdatatype.from_text(rtype)
-            parsed = parser(qname_obj, rtype_obj, res)
-            return parsed
-        except Exception as ex:
-            self.logger.warning("unexpected error %s occurred while parsing" %
-                                (str(ex)))
-            self.logger.warning("unable to parse %s %s with parser" %
-                                (qname, rtype))
-            return {}
-
-    def convert_influx_notation(self,
-                                current_time,
-                                time_diff,
-                                nameserver,
-                                dst,
-                                src,
-                                prb_id,
-                                af,
-                                proto,
-                                qname,
-                                rrtype,
-                                result):
-
-        measurement_name = self.cnfg.data_store.database
-
-        (err, response) = result
-
-        if err:
-            field_data = dict(reason=str(err))
-            error_class_name = err.__class__.__name__
-        else:
-            field_data = self.parse_response_to_fields(qname, rrtype, response)
-            error_class_name = ""
-
-        field_data.update(dict(time_took=time_diff))
-
-        result = dict(measurement=measurement_name,
-                      time=current_time,
-                      tags=dict(af=af,
-                                dst_addr=dst,
-                                dst_name=nameserver,
-                                src_addr=src,
-                                prb_id=prb_id,
-                                prb_lat=self.cnfs.measurement.latitude,
-                                prb_lon=self.cnfs.measurement.longitude,
-                                proto=proto,
-                                rrtype=rrtype,
-                                qname=qname,
-                                got_response=err is None,
-                                error_class_name=error_class_name),
-                      fields=field_data)
-
-        return result
-
-
-def soa_parser(qname_obj, rtype_obj, res):
-
-    rrset = res.get_rrset(res.answer, qname_obj, dns.rdataclass.IN, rtype_obj)
-
-    if (rrset is None) or (len(rrset) == 0):
-        return {}
-
-    record = rrset[0]
-    result = dict(id=res.id,
-                  ttl=rrset.ttl,
-                  name=str(rrset.name),
-                  mname=str(record.mname),
-                  rname=str(record.rname),
-                  serial=record.serial,
-                  type=dns.rdatatype.to_text(rtype_obj))
-
-    return result
-
-
-def ns_parser(qname_obj, rtype_obj, res):
-
-    rrset = res.get_rrset(res.answer, qname_obj, dns.rdataclass.IN, rtype_obj)
-
-    if (rrset is None) or (len(rrset) == 0):
-        return {}
-
-    # todo: 正しく実装！
-
-    return {}
-
-
 class Measurer(framework.SetupwithInfluxdb):
 
     def __init__(self):
         super().__init__(__name__, __file__)
         self.__set_measurer_id()
         self.__set_global_ipaddress()
-        self.__validate_id()
+#        self.__validate_id()
         self.__load_measurement_info()
-        self.converter = MeasurementDataConverter(self.logger,
-                                                  self.cnfg,
-                                                  self.cnfs)
+        self.dao_dnsprobe = dao.Dnsprobe(self)
 
     def __set_measurer_id(self):
         hostname = socket.gethostname()
@@ -238,23 +130,6 @@ class Measurer(framework.SetupwithInfluxdb):
             self.logger.error("unable to map json obj to namedtuple")
             sys.exit(1)
 
-    def write_measurement_data(self, data):
-        ret = False
-
-        try:
-            self.logger.info("writing data to influxdb")
-            ret = self.session.write_points(data)
-            if not ret:
-                self.logger.warning("writing data to the influxdb failed")
-                self.logger.debug("while writing followeing %s" % str(data))
-        except Exception as ex:
-            self.logger.warning("%s occurred while writing" % str(ex))
-            self.logger.debug("while writing following %s" % str(data))
-        finally:
-            pass
-
-        return ret
-
     def __measurement_core(self,
                            current_time,
                            nameserver,
@@ -288,18 +163,25 @@ class Measurer(framework.SetupwithInfluxdb):
         finally:
             time_diff = (time.time() - start_at) * 1000
 
-        writable = self.converter.convert_influx_notation(current_time,
-                                                          time_diff,
-                                                          nameserver,
-                                                          dst,
-                                                          src,
-                                                          self.measurer_id,
-                                                          af,
-                                                          proto,
-                                                          qname,
-                                                          rrtype,
-                                                          (err, response))
-        return writable
+        latitude = self.cnfs.measurement.latitude
+        longitude = self.cnfs.measurement.longitude
+
+        # todo: クエリのtypeに応じてクラスを使い分けられるよう修正
+        measured_data = types.SOA_DNSMeasurementData(current_time,
+                                                     time_diff,
+                                                     nameserver,
+                                                     dst,
+                                                     src,
+                                                     self.measurer_id,
+                                                     latitude,
+                                                     longitude,
+                                                     af,
+                                                     proto,
+                                                     qname,
+                                                     rrtype,
+                                                     err,
+                                                     response)
+        return measured_data
 
     def measure_toplevel(self):
 
@@ -371,7 +253,7 @@ class Measurer(framework.SetupwithInfluxdb):
 
     def run(self):
         result = self.measure_toplevel()
-        ret = self.write_measurement_data(result)
+        ret = self.dao_dnsprobe.write_measurement_data(result)
         if not ret:
             sys.exit(1)
         sys.exit(0)
@@ -381,7 +263,7 @@ if __name__ == "__main__":
 
     try:
         measurer = Measurer()
-        measurer.converter.add_record_parser("jp", "SOA", soa_parser)
+        measurer.ipv4 = "10.0.2.15"
     except Exception:
         # LOGGERのセットアップ自体にも失敗している可能性ありの為
         # 標準出力にログ出力
