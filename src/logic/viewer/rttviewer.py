@@ -95,8 +95,8 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "uptime ratio"
-            labels = ["unanswered", "answered"]
+            title = "UPTIME Ratio"
+            labels = ["Unanswered", "Answered"]
             donut_size = 0.4
             hoverinfo = "label+percent+name"
             row_tiling_num = 2
@@ -162,7 +162,8 @@ class RTTViewerLogic():
                                      domain=dict(row=r, column=c),
                                      name=snt.escape("%s IPv%s" % (proto, af)),
                                      hoverinfo=hoverinfo,
-                                     hole=donut_size))
+                                     hole=donut_size,
+                                     marker=dict(colors=["red", "green"])))
 
             figure = dict(data=traces,
                           layout=dict(title=title,
