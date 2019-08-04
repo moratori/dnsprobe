@@ -95,7 +95,7 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "error queries ratio(e.g. timeout, no route to host)"
+            title = "uptime ratio"
             labels = ["unanswered", "answered"]
             donut_size = 0.4
             hoverinfo = "label+percent+name"
@@ -186,7 +186,7 @@ class RTTViewerLogic():
                 LOGGER.warning("lack of argument for update_rttgraph")
                 return dict()
 
-            title = """RTT Transition(only successful queries)"""
+            title = """RTT Performance"""
 
             start_time, end_time = \
                 self.__convert_range_index_to_time(time_range)
