@@ -113,7 +113,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
                           marginTop="3%",
                           marginLeft="2%"))
 
-        ], id="main-content-menu")
+        ], id="main-content-menu",
+            style=dict(marginBottom="1.5%"))
 
         return menu
 
