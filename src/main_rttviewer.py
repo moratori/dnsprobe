@@ -10,7 +10,6 @@ import common.data.dao as dao
 import logic.viewer.rttviewer as rttviewerlogic
 import dash_html_components as html
 import dash_core_components as doc
-import plotly.graph_objs as go
 
 import traceback
 import os
@@ -145,42 +144,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
     def make_map(self):
 
-        map_height = 1100
-        map_scale = 1
-        map_center_lat = 25
-        map_center_lon = 90
-        map_region = "asia"
-        map_title = "Location of Probes"
-        map_land_color = "rgb(235, 235, 235)"
-        map_resolution = 50
-        map_projection_type = "equirectangular"
-
-        probe_location_name, latitudes, longitudes = \
-            self.dao_dnsprobe.make_probe_locations()
-
-        data = [go.Scattergeo(lon=longitudes,
-                              lat=latitudes,
-                              text=probe_location_name,
-                              mode="markers",
-                              marker=dict(size=13,
-                                          symbol="circle"))]
-
-        layout = go.Layout(title=map_title,
-                           height=map_height,
-                           geo=dict(scope=map_region,
-                                    projection=dict(type=map_projection_type,
-                                                    scale=map_scale),
-                                    showland=True,
-                                    resolution=map_resolution,
-                                    center=dict(lat=map_center_lat,
-                                                lon=map_center_lon),
-                                    landcolor=map_land_color,
-                                    countrywidth=0.3,
-                                    subunitwidth=0.3))
-
         graph = html.Div([doc.Graph("main-content-map-figure",
-                                    figure=dict(data=data,
-                                                layout=layout),
+                                    figure=dict(),
                                     config=dict(displayModeBar=False))
                           ], style=dict(display="block",
                                         marginTop="2%",
