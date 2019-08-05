@@ -253,3 +253,55 @@ class RTTViewerLogic():
                                           y=1.1)))
 
             return figure
+
+        @self.rttviewer.application.callback(
+            Output("main-content-map-figure", "figure"),
+            [Input("main-content-menu-filter_probe", "value")])
+        def update_map(probe_name):
+
+            map_height = 1100
+            map_scale = 1
+            map_center_lat = 25
+            map_center_lon = 90
+            map_region = "asia"
+            map_title = "Location of Probes"
+            map_land_color = "rgb(235, 235, 235)"
+            map_resolution = 50
+            map_proj_type = "equirectangular"
+            color_map = {True: "orange", False: "grey"}
+            size_map = {True: 14, False: 13}
+
+            probe_location_name, latitudes, longitudes = \
+                self.rttviewer.dao_dnsprobe.make_probe_locations()
+
+            data = []
+            for (locname, lat, lon) in zip(probe_location_name,
+                                           latitudes,
+                                           longitudes):
+
+                color = color_map[probe_name == locname]
+                size = size_map[probe_name == locname]
+
+                data.append(go.Scattergeo(lon=[lon],
+                                          lat=[lat],
+                                          text=locname,
+                                          mode="markers",
+                                          showlegend=False,
+                                          marker=dict(size=size,
+                                                      symbol="circle",
+                                                      color=color)))
+
+            layout = go.Layout(title=map_title,
+                               height=map_height,
+                               geo=dict(scope=map_region,
+                                        projection=dict(type=map_proj_type,
+                                                        scale=map_scale),
+                                        showland=True,
+                                        resolution=map_resolution,
+                                        center=dict(lat=map_center_lat,
+                                                    lon=map_center_lon),
+                                        landcolor=map_land_color,
+                                        countrywidth=0.3,
+                                        subunitwidth=0.3))
+
+            return dict(data=data, layout=layout)
