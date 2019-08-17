@@ -146,9 +146,10 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
         graph = html.Div([doc.Graph("main-content-map-figure",
                                     figure=dict(),
-                                    config=dict(displayModeBar=False))
+                                    config=dict(displayModeBar=False),
+                                    style=dict(paddingTop="0%"))
                           ], style=dict(display="block",
-                                        marginTop="2%",
+                                        marginTop="0%",
                                         marginLeft="auto",
                                         marginRight="auto"),
                          id="main-content-map")
