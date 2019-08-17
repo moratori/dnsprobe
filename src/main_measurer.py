@@ -19,6 +19,7 @@ import netifaces
 import ipaddress
 import datetime
 import time
+import uptime
 import dns.name
 import dns.message
 import dns.query
@@ -34,6 +35,7 @@ class Measurer(framework.SetupwithInfluxdb):
         super().__init__(__name__, __file__)
         self.__set_measurer_id()
         self.__set_global_ipaddress()
+        self.__set_server_boottime()
         self.__validate_id()
         self.__load_measurement_info()
         self.dao_dnsprobe = dao.Dnsprobe(self)
@@ -43,6 +45,9 @@ class Measurer(framework.SetupwithInfluxdb):
         self.measurer_id = "%s-%d" % (
             self.cnfs.measurement.region,
             binascii.crc32(hostname.encode("utf8")))
+
+    def __set_server_boottime(self):
+        self.server_boottime = str(uptime.boottime().isoformat()) + "Z"
 
     def __set_global_ipaddress(self):
         selected_ipv4 = None
@@ -173,6 +178,7 @@ class Measurer(framework.SetupwithInfluxdb):
                                                      dst,
                                                      src,
                                                      self.measurer_id,
+                                                     self.server_boottime,
                                                      latitude,
                                                      longitude,
                                                      af,
