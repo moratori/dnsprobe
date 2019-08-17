@@ -286,6 +286,7 @@ class RTTViewerLogic():
                 data.append(go.Scattergeo(lon=[lon],
                                           lat=[lat],
                                           text=locname,
+                                          name=locname,
                                           mode="markers",
                                           showlegend=False,
                                           marker=dict(size=size,
