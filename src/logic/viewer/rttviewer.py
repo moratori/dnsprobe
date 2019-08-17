@@ -160,7 +160,8 @@ class RTTViewerLogic():
                 traces.append(go.Pie(values=[unanswered_count, answered_count],
                                      labels=labels,
                                      domain=dict(row=r, column=c),
-                                     name=snt.escape("%s IPv%s" % (proto, af)),
+                                     name=snt.escape("%s IPv%s" %
+                                                     (proto.upper(), af)),
                                      hoverinfo=hoverinfo,
                                      hole=donut_size,
                                      marker=dict(colors=["red", "green"])))
@@ -234,7 +235,7 @@ class RTTViewerLogic():
                                          x=x,
                                          y=y,
                                          name=snt.escape("%s over IPv%s" %
-                                                         (proto, af))))
+                                                         (proto.upper(), af))))
 
             figure = dict(data=traces,
                           layout=go.Layout(
