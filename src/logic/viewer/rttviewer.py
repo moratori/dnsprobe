@@ -197,10 +197,6 @@ class RTTViewerLogic():
                 self.rttviewer.dao_dnsprobe.get_af_proto_combination(
                     dns_server_name, probe_name)
 
-            LOGGER.debug("time range %s to %s" % (start_time, end_time))
-            LOGGER.debug("af proto combination: %s" %
-                         (af_proto_combination))
-
             traces = []
             for (af, proto) in af_proto_combination:
 
@@ -257,8 +253,9 @@ class RTTViewerLogic():
 
         @self.rttviewer.application.callback(
             Output("main-content-map-figure", "figure"),
-            [Input("main-content-menu-filter_probe", "value")])
-        def update_map(probe_name):
+            [Input("main-content-menu-filter_probe", "value"),
+             Input("main-content-graph-interval", "n_intervals")])
+        def update_map(probe_name, cnt):
 
             map_height = 1100
             map_scale = 1
@@ -271,6 +268,7 @@ class RTTViewerLogic():
             map_proj_type = "equirectangular"
             color_map = {True: "orange", False: "grey"}
             size_map = {True: 14, False: 13}
+            hovertext = "last measured at: %s<br />uptime: %s"
 
             probe_location_name, latitudes, longitudes = \
                 self.rttviewer.dao_dnsprobe.make_probe_locations()
@@ -283,10 +281,19 @@ class RTTViewerLogic():
                 color = color_map[probe_name == locname]
                 size = size_map[probe_name == locname]
 
+                last_measured = \
+                    self.rttviewer.dao_dnsprobe.get_probe_last_measured(
+                        locname)
+                uptime = \
+                    self.rttviewer.dao_dnsprobe.get_probe_uptime(
+                        locname)
+
                 data.append(go.Scattergeo(lon=[lon],
                                           lat=[lat],
                                           text=locname,
                                           name=locname,
+                                          hovertext=hovertext % (last_measured,
+                                                                 uptime),
                                           mode="markers",
                                           showlegend=False,
                                           marker=dict(size=size,
