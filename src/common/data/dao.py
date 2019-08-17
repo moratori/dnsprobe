@@ -84,6 +84,40 @@ class Dnsprobe:
 
         return probe_list, lats, lons
 
+    def get_probe_last_measured(self, probe_id):
+        ret_uptime = self.app.session.query(
+                    "select time, time_took from dnsprobe where \
+                     prb_id = $prb_id \
+                     order by time desc \
+                     limit 1",
+                    params=dict(params=json.dumps(
+                        dict(prb_id=probe_id))))
+
+        lasttime_value = "unknown"
+
+        for uptimes in ret_uptime:
+            for uptime in uptimes:
+                lasttime_value = uptime["time"]
+
+        return str(lasttime_value)
+
+    def get_probe_uptime(self, probe_id):
+        ret_uptime = self.app.session.query(
+                    "select probe_uptime from dnsprobe where \
+                     prb_id = $prb_id \
+                     order by time desc \
+                     limit 1",
+                    params=dict(params=json.dumps(
+                        dict(prb_id=probe_id))))
+
+        uptime_value = "unknown"
+
+        for uptimes in ret_uptime:
+            for uptime in uptimes:
+                uptime_value = uptime["probe_uptime"]
+
+        return str(uptime_value)
+
     def get_af_proto_combination(self, dns_server_name, probe_name):
 
         ret_af = self.app.session.query(
