@@ -47,7 +47,9 @@ class Measurer(framework.SetupwithInfluxdb):
             binascii.crc32(hostname.encode("utf8")))
 
     def __set_server_boottime(self):
-        self.server_boottime = str(uptime.boottime().isoformat()) + "Z"
+        current_time = datetime.datetime.utcnow()
+        delta = datetime.timedelta(seconds=uptime.uptime())
+        self.server_boottime = str((current_time - delta).isoformat()) + "Z"
 
     def __set_global_ipaddress(self):
         selected_ipv4 = None
