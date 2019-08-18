@@ -257,7 +257,7 @@ class RTTViewerLogic():
              Input("main-content-graph-interval", "n_intervals")])
         def update_map(probe_name, cnt):
 
-            map_height = 1100
+            map_height = 850
             map_scale = 1
             map_center_lat = 25
             map_center_lon = 90
@@ -302,7 +302,11 @@ class RTTViewerLogic():
 
             layout = go.Layout(title=map_title,
                                height=map_height,
-                               geo=dict(scope=map_region,
+                               geo=dict(lonaxis=dict(showgrid=True),
+                                        lataxis=dict(showgrid=True),
+                                        showcountries=True,
+                                        showsubunits=True,
+                                        scope=map_region,
                                         projection=dict(type=map_proj_type,
                                                         scale=map_scale),
                                         showland=True,
