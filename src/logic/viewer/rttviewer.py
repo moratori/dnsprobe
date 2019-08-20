@@ -95,7 +95,7 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "UPTIME Ratio"
+            title = "Answered Ratio"
             labels = ["Unanswered", "Answered"]
             donut_size = 0.4
             hoverinfo = "label+percent+name"
@@ -268,7 +268,7 @@ class RTTViewerLogic():
             map_proj_type = "equirectangular"
             color_map = {True: "orange", False: "grey"}
             size_map = {True: 14, False: 13}
-            hovertext = "last measured at: %s<br />uptime: %s"
+            hovertext = "probe: %s<br />last measured at: %s<br />uptime: %s"
 
             probe_location_name, latitudes, longitudes = \
                 self.rttviewer.dao_dnsprobe.make_probe_locations()
@@ -292,7 +292,8 @@ class RTTViewerLogic():
                                           lat=[lat],
                                           text=locname,
                                           name=locname,
-                                          hovertext=hovertext % (last_measured,
+                                          hovertext=hovertext % (locname,
+                                                                 last_measured,
                                                                  uptime),
                                           mode="markers",
                                           showlegend=False,
