@@ -13,6 +13,8 @@ import json
 import datetime
 import math
 
+import dash_html_components as html
+import dash_core_components as doc
 from dash.dependencies import Input, Output
 from flask import abort, Response
 from logging import getLogger
@@ -70,12 +72,39 @@ class RTTViewerLogic():
                 abort(404)
 
         @self.rttviewer.application.callback(
-            Output("main-content-ratiograph-figure", "figure"),
+            Output("main-content-graph", "children"),
             [Input("main-content-menu-filter_measurement_time", "value"),
              Input("main-content-menu-filter_authoritatives", "value"),
              Input("main-content-menu-filter_probe", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_ratiograph(time_range, dns_server_name, probe_name, cnt):
+        def update_graph(time_range, dns_server_names, probe_name, cnt):
+
+            result = [doc.Interval(id="main-content-graph-interval",
+                                   interval=30 * 1000,
+                                   n_intervals=0)]
+
+            for dns_server_name in reversed(dns_server_names):
+                result.append(html.Div([
+                    html.Div([
+                        doc.Graph(figure=__update_rttgraph(time_range,
+                                                           dns_server_name,
+                                                           probe_name),
+                                  style=dict(height=600),
+                                  config=dict(displayModeBar=False))],
+                             style=dict(display="inline-block",
+                                        width="50%")),
+                    html.Div([
+                        doc.Graph(figure=__update_ratiograph(time_range,
+                                                             dns_server_name,
+                                                             probe_name),
+                                  style=dict(height=600),
+                                  config=dict(displayModeBar=False))],
+                             style=dict(display="inline-block",
+                                        width="50%"))]))
+
+            return result
+
+        def __update_ratiograph(time_range, dns_server_name, probe_name):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
@@ -95,9 +124,10 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "Answered Ratio"
+            title = "Answered Ratio<br />%s from %s" % (dns_server_name,
+                                                        probe_name)
             labels = ["Unanswered", "Answered"]
-            donut_size = 0.4
+            donut_size = 0.3
             hoverinfo = "label+percent+name"
             row_tiling_num = 2
 
@@ -173,13 +203,7 @@ class RTTViewerLogic():
 
             return figure
 
-        @self.rttviewer.application.callback(
-            Output("main-content-rttgraph-figure", "figure"),
-            [Input("main-content-menu-filter_measurement_time", "value"),
-             Input("main-content-menu-filter_authoritatives", "value"),
-             Input("main-content-menu-filter_probe", "value"),
-             Input("main-content-graph-interval", "n_intervals")])
-        def update_rttgraph(time_range, dns_server_name, probe_name, cnt):
+        def __update_rttgraph(time_range, dns_server_name, probe_name):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
@@ -188,7 +212,15 @@ class RTTViewerLogic():
                 LOGGER.warning("lack of argument for update_rttgraph")
                 return dict()
 
-            title = """RTT Performance"""
+            LOGGER.debug("time range: %s" % time_range)
+            LOGGER.debug("dns server name: %s" % dns_server_name)
+            LOGGER.debug("probe name: %s" % probe_name)
+
+            if not dns_server_name:
+                return dict()
+
+            title = "RTT Performance<br />%s from %s" % (dns_server_name,
+                                                         probe_name)
 
             start_time, end_time = \
                 self.__convert_range_index_to_time(time_range)

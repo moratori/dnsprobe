@@ -91,8 +91,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
                 "Filter by authoritative server:",
                 doc.Dropdown(id="main-content-menu-filter_authoritatives",
                              options=authoritative_group,
-                             value=default_authoritative,
-                             multi=False)
+                             value=[default_authoritative],
+                             multi=True)
             ], style=dict(display="inline-block",
                           width="48%",
                           marign="auto",
@@ -119,26 +119,11 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
     def make_graph(self):
 
-        graph = html.Div([
-            html.Div([
-                doc.Graph(id="main-content-rttgraph-figure",
-                          figure=dict(),
-                          style=dict(height=600),
-                          config=dict(displayModeBar=False))],
-                     id="main-content-rttgraph",
-                     style=dict(display="inline-block",
-                                width="50%")),
-            html.Div([
-                doc.Graph(id="main-content-ratiograph-figure",
-                          figure=dict(),
-                          style=dict(height=600),
-                          config=dict(displayModeBar=False))],
-                     id="main-content-ratiograph",
-                     style=dict(display="inline-block",
-                                width="50%")),
+        graph = html.Div(children=[
             doc.Interval(id="main-content-graph-interval",
-                         interval=30*1000,
-                         n_intervals=0)])
+                         interval=30 * 1000,
+                         n_intervals=0)],
+                         id="main-content-graph")
 
         return graph
 
