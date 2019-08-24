@@ -9,6 +9,7 @@ import configparser
 import namedtupled
 import sys
 import traceback
+import json
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -29,6 +30,7 @@ class BaseSetup(object):
         self.load_config()
         self.validate_config()
         self.setup_logger()
+        self.load_tmpdata()
 
     def setup_commandline_argument(self):
         argparser = argparse.ArgumentParser()
@@ -38,6 +40,50 @@ class BaseSetup(object):
 
     def validate_commandline_argument(self):
         pass
+
+    def load_tmpdata(self):
+
+        tmpfilename = os.path.join(config.TMP_DIR, self.__class__.__name__)
+
+        if not (os.path.isdir(config.TMP_DIR) and os.path.isfile(tmpfilename)):
+            self.logger.debug("tmpdata file(%s) not found. loading skipped" %
+                              (tmpfilename))
+            self.tmp_data = {}
+            return
+
+        try:
+            with open(tmpfilename, "r", encoding="utf8") as handle:
+                    self.tmp_data = json.load(handle)
+        except Exception as ex:
+            self.logger.warning("unable to load tmpdata from %s: %s" %
+                                (tmpfilename, str(ex)))
+            self.tmp_data = {}
+
+        self.logger.debug("tmp data loaded: %s" % (self.tmp_data))
+
+    def write_tmpdata(self):
+
+        # 排他制御はないので、バッチの起動制御で対応する
+
+        tmpfilename = os.path.join(config.TMP_DIR, self.__class__.__name__)
+
+        if not os.path.isdir(config.TMP_DIR):
+            try:
+                os.mkdir(config.TMP_DIR)
+            except FileExistsError as ex:
+                self.logger.warning("fileexists error while making dir: %s" %
+                                    (str(ex)))
+            except Exception as ex:
+                self.logger.warning("error occurred while making dir: %s" %
+                                    (str(ex)))
+                self.logger.error("unable to make directory")
+                return
+        try:
+            with open(tmpfilename, "w", encoding="utf8") as handle:
+                json.dump(self.tmp_data, handle)
+        except Exception as ex:
+            self.logger.warning("unable to write tmp data to %s: %s" %
+                                (tmpfilename, str(ex)))
 
     def load_config(self):
         specific_config_basename = os.path.basename(
