@@ -19,6 +19,7 @@ import netifaces
 import ipaddress
 import datetime
 import time
+import ipwhois
 import uptime
 import dns.name
 import dns.message
@@ -37,6 +38,7 @@ class Measurer(framework.SetupwithInfluxdb):
         self.__set_global_ipaddress()
         self.__set_server_boottime()
         self.__validate_id()
+        self.__set_net_description()
         self.__load_measurement_info()
         self.dao_dnsprobe = dao.Dnsprobe(self)
 
@@ -97,6 +99,42 @@ class Measurer(framework.SetupwithInfluxdb):
             self.logger.critical("measurer must have global IPv4/IPv6 address")
             sys.exit(1)
 
+    def __set_net_description(self):
+
+        self.net_desc_v4 = None
+        self.net_desc_v4 = None
+
+        if "net_desc" in self.tmp_data:
+            net_desc = self.tmp_data["net_desc"]
+            if ("v4" in net_desc) and ("v6" in net_desc):
+                self.logger.debug("found net description from tmp data")
+                self.net_desc_v4 = net_desc["v4"]
+                self.net_desc_v6 = net_desc["v6"]
+
+        if (self.net_desc_v4 is None) or (self.net_desc_v6 is None):
+            try:
+                self.logger.debug("querying rdap...")
+                v4 = ipwhois.IPWhois(self.ipv4)
+                v6 = ipwhois.IPWhois(self.ipv6)
+                v4ret = v4.lookup_rdap()
+                v6ret = v6.lookup_rdap()
+
+                self.net_desc_v4 = (v4ret["asn"], v4ret["asn_description"])
+                self.net_desc_v6 = (v6ret["asn"], v6ret["asn_description"])
+
+                self.tmp_data["net_desc"] = dict(v4=self.net_desc_v4,
+                                                 v6=self.net_desc_v6)
+                self.write_tmpdata()
+
+            except Exception as ex:
+                self.logger.warning("unable to get ipaddress description: %s" %
+                                    (str(ex)))
+                self.net_desc_v4 = ("unknown", "unknown")
+                self.net_desc_v6 = ("unknown", "unknown")
+
+        self.logger.info("IPv4 description: %s" % str(self.net_desc_v4))
+        self.logger.info("IPv6 description: %s" % str(self.net_desc_v6))
+
     def __load_measurement_info(self):
 
         protocol = self.cnfs.controller.protocol
@@ -144,6 +182,8 @@ class Measurer(framework.SetupwithInfluxdb):
                            dst,
                            src,
                            af,
+                           asn,
+                           asn_desc,
                            timeout,
                            proto,
                            qname,
@@ -180,6 +220,8 @@ class Measurer(framework.SetupwithInfluxdb):
                                                      dst,
                                                      src,
                                                      self.measurer_id,
+                                                     asn,
+                                                     asn_desc,
                                                      self.server_boottime,
                                                      latitude,
                                                      longitude,
@@ -217,8 +259,10 @@ class Measurer(framework.SetupwithInfluxdb):
 
                 if addr_obj.version == 4:
                     source = self.ipv4
+                    asn, asn_desc = self.net_desc_v4
                 elif addr_obj.version == 6:
                     source = self.ipv6
+                    asn, asn_desc = self.net_desc_v6
                 else:
                     self.logger.error("unknown version addr: %s" % str(addr))
                     sys.exit(1)
@@ -245,6 +289,8 @@ class Measurer(framework.SetupwithInfluxdb):
                                             addr,
                                             source,
                                             addr_obj.version,
+                                            asn,
+                                            asn_desc,
                                             timeout,
                                             protocol,
                                             qname,
