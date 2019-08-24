@@ -39,6 +39,8 @@ class DNSMeasurementData():
                  dst,
                  src,
                  prb_id,
+                 prb_asn,
+                 prb_asn_desc,
                  server_boottime,
                  latitude,
                  longitude,
@@ -55,6 +57,8 @@ class DNSMeasurementData():
         self.dst = dst
         self.src = src
         self.prb_id = prb_id
+        self.prb_asn = prb_asn
+        self.prb_asn_desc = prb_asn_desc
         self.server_boottime = server_boottime
         self.latitude = latitude
         self.longitude = longitude
@@ -95,7 +99,9 @@ class DNSMeasurementData():
             error_class_name = ""
 
         field_data.update(dict(time_took=self.time_diff,
-                               probe_uptime=self.server_boottime))
+                               probe_uptime=self.server_boottime,
+                               probe_asn=self.prb_asn,
+                               probe_asn_desc=self.prb_asn_desc))
 
         result = dict(measurement=measurement_name,
                       time=self.current_time,
