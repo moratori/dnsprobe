@@ -79,9 +79,7 @@ class RTTViewerLogic():
              Input("main-content-graph-interval", "n_intervals")])
         def update_graph(time_range, dns_server_names, probe_name, cnt):
 
-            result = [doc.Interval(id="main-content-graph-interval",
-                                   interval=30 * 1000,
-                                   n_intervals=0)]
+            result = []
 
             for dns_server_name in reversed(dns_server_names):
                 result.append(html.Div([

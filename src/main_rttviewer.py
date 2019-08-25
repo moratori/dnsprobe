@@ -53,7 +53,10 @@ class RTTViewer(framework.SetupwithInfluxdb):
     def make_header(self):
 
         header = html.Div([
-            html.H1("Authoritative DNS Server Response Time")
+            html.H1("Authoritative DNS Server Response Time"),
+            doc.Interval(id="main-content-graph-interval",
+                         interval=30 * 1000,
+                         n_intervals=0)
         ], id="main-content-header")
 
         return header
@@ -119,10 +122,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
     def make_graph(self):
 
-        graph = html.Div(children=[
-            doc.Interval(id="main-content-graph-interval",
-                         interval=30 * 1000,
-                         n_intervals=0)],
+        graph = html.Div(children=[],
                          id="main-content-graph")
 
         return graph
