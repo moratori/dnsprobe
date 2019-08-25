@@ -276,6 +276,7 @@ class Measurer(framework.SetupwithInfluxdb):
                     qname_obj = dns.name.from_text(qname)
                     rrtype_obj = dns.rdatatype.from_text(rrtype)
                     qo = dns.message.make_query(qname_obj, rrtype_obj)
+                    qo.flags &= 0xFEFF
                 except dns.rdatatype.UnknownRdatatype:
                     self.logger.warning("unknown query: %s" % (rrtype))
                     self.logger.warning("measurement skipped")
