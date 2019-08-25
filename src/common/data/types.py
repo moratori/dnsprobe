@@ -137,6 +137,16 @@ class SOA_DNSMeasurementData(DNSMeasurementData):
         if (rrset is None) or (len(rrset) == 0):
             return {}
 
+        nsid = ""
+
+        for opt in res.options:
+            if opt.otype == dns.edns.NSID:
+                nsid = opt.data.decode("utf8")
+                break
+
+        if not nsid:
+            nsid = "unknown"
+
         record = rrset[0]
         result = dict(id=res.id,
                       ttl=rrset.ttl,
@@ -144,6 +154,7 @@ class SOA_DNSMeasurementData(DNSMeasurementData):
                       mname=str(record.mname),
                       rname=str(record.rname),
                       serial=record.serial,
+                      nsid=nsid,
                       type=dns.rdatatype.to_text(rtype_obj))
 
         return result
