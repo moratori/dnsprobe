@@ -217,8 +217,8 @@ class RTTViewerLogic():
             if not dns_server_name:
                 return dict()
 
-            title = "RTT Performance<br />%s from %s" % (dns_server_name,
-                                                         probe_name)
+            title = "RTT Performance(%s from %s)" % (dns_server_name,
+                                                     probe_name)
 
             start_time, end_time = \
                 self.__convert_range_index_to_time(time_range)
