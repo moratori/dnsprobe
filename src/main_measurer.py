@@ -275,10 +275,20 @@ class Measurer(framework.SetupwithInfluxdb):
                 try:
                     qname_obj = dns.name.from_text(qname)
                     rrtype_obj = dns.rdatatype.from_text(rrtype)
-                    qo = dns.message.make_query(qname_obj, rrtype_obj)
+                    qo = dns.message.make_query(qname_obj,
+                                                rrtype_obj,
+                                                use_edns=True)
                     qo.flags &= 0xFEFF
+                    qo.use_edns(edns=0,
+                                options=[dns.edns.GenericOption(dns.edns.NSID,
+                                                                bytes())])
+
                 except dns.rdatatype.UnknownRdatatype:
                     self.logger.warning("unknown query: %s" % (rrtype))
+                    self.logger.warning("measurement skipped")
+                    continue
+                except Exception as ex:
+                    self.logger.warning("unable to query: %s" % (str(ex)))
                     self.logger.warning("measurement skipped")
                     continue
 
