@@ -118,6 +118,38 @@ class Dnsprobe:
 
         return str(uptime_value)
 
+    def get_probe_net_desc(self, probe_id):
+        v4_asn = "unknown"
+        v4_desc = "unknown"
+        v6_asn = "unknown"
+        v6_desc = "unknown"
+
+        ret_desc = self.app.session.query(
+            "select probe_asn, probe_asn_desc \
+             from dnsprobe  \
+             where prb_id = $prb_id \
+             group by af \
+             order by time desc \
+             limit 1",
+            params=dict(params=json.dumps(
+                dict(prb_id=probe_id))))
+
+        try:
+            LOGGER.debug("ip description object: %s" % (str(ret_desc)))
+            measurement = (self.__class__.__name__).lower()
+            v4 = list(ret_desc.get_points(measurement=measurement,
+                                          tags=dict(af="4")))
+            v6 = list(ret_desc.get_points(measurement=measurement,
+                                          tags=dict(af="6")))
+            v4_asn = v4[0]["probe_asn"]
+            v4_desc = v4[0]["probe_asn_desc"]
+            v6_asn = v6[0]["probe_asn"]
+            v6_desc = v6[0]["probe_asn_desc"]
+        except Exception as ex:
+            LOGGER.warning("unable to get IP description: %s" % (str(ex)))
+
+        return v4_asn, v4_desc, v6_asn, v6_desc
+
     def get_af_proto_combination(self, dns_server_name, probe_name):
 
         ret_af = self.app.session.query(
