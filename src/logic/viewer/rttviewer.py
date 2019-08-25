@@ -300,7 +300,9 @@ class RTTViewerLogic():
             map_proj_type = "equirectangular"
             color_map = {True: "orange", False: "grey"}
             size_map = {True: 14, False: 13}
-            hovertext = "probe: %s<br />last measured at: %s<br />uptime: %s"
+            hovertext = "probe-id: %s<br />last measured: %s<br />uptime: %s\
+            <br />ASN(v4): AS%s<br />description(v4): %s\
+            <br />ASN(v6): AS%s<br />description(v6): %s"
 
             probe_location_name, latitudes, longitudes = \
                 self.rttviewer.dao_dnsprobe.make_probe_locations()
@@ -319,6 +321,8 @@ class RTTViewerLogic():
                 uptime = \
                     self.rttviewer.dao_dnsprobe.get_probe_uptime(
                         locname)
+                v4_asn, v4_desc, v6_asn, v6_desc = \
+                    self.rttviewer.dao_dnsprobe.get_probe_net_desc(locname)
 
                 data.append(go.Scattergeo(lon=[lon],
                                           lat=[lat],
@@ -326,7 +330,11 @@ class RTTViewerLogic():
                                           name=locname,
                                           hovertext=hovertext % (locname,
                                                                  last_measured,
-                                                                 uptime),
+                                                                 uptime,
+                                                                 v4_asn,
+                                                                 v4_desc,
+                                                                 v6_asn,
+                                                                 v6_desc),
                                           mode="markers",
                                           showlegend=False,
                                           marker=dict(size=size,
