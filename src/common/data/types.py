@@ -89,6 +89,8 @@ class DNSMeasurementData():
 
     def convert_influx_notation(self, measurement_name):
 
+        nsid = ""
+
         if self.err:
             field_data = dict(reason=str(self.err))
             error_class_name = self.err.__class__.__name__
@@ -97,6 +99,14 @@ class DNSMeasurementData():
                                                          self.rrtype,
                                                          self.response)
             error_class_name = ""
+
+            for opt in self.response.options:
+                if opt.otype == dns.edns.NSID:
+                    nsid = opt.data.decode("utf8")
+                    break
+
+        if not nsid:
+            nsid = "unknown"
 
         field_data.update(dict(time_took=self.time_diff,
                                probe_uptime=self.server_boottime,
@@ -108,6 +118,7 @@ class DNSMeasurementData():
                       tags=dict(af=self.af,
                                 dst_addr=self.dst,
                                 dst_name=self.nameserver,
+                                nsid=nsid,
                                 src_addr=self.src,
                                 prb_id=self.prb_id,
                                 prb_lat=self.latitude,
@@ -118,6 +129,8 @@ class DNSMeasurementData():
                                 got_response=self.err is None,
                                 error_class_name=error_class_name),
                       fields=field_data)
+
+        LOGGER.debug("result: %s" % (result))
 
         return result
 
@@ -137,16 +150,6 @@ class SOA_DNSMeasurementData(DNSMeasurementData):
         if (rrset is None) or (len(rrset) == 0):
             return {}
 
-        nsid = ""
-
-        for opt in res.options:
-            if opt.otype == dns.edns.NSID:
-                nsid = opt.data.decode("utf8")
-                break
-
-        if not nsid:
-            nsid = "unknown"
-
         record = rrset[0]
         result = dict(id=res.id,
                       ttl=rrset.ttl,
@@ -154,7 +157,6 @@ class SOA_DNSMeasurementData(DNSMeasurementData):
                       mname=str(record.mname),
                       rname=str(record.rname),
                       serial=record.serial,
-                      nsid=nsid,
                       type=dns.rdatatype.to_text(rtype_obj))
 
         return result
