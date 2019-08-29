@@ -177,8 +177,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
                               margin="auto"))
             ], id="main",
                style=dict(margin="auto",
-                          marginTop="1%",
-                          width="96%",
+                          marginTop="0%",
+                          width="100%",
                           boxShadow="0px 0px 3px",
                           border="1px solid #eee",
                           bacgroundColor="#ffffff"))])
