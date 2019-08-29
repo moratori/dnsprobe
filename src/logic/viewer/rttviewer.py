@@ -90,7 +90,8 @@ class RTTViewerLogic():
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
-                                        width="50%")),
+                                        width="37%")),
+
                     html.Div([
                         doc.Graph(figure=__update_ratiograph(time_range,
                                                              dns_server_name,
@@ -98,9 +99,75 @@ class RTTViewerLogic():
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
-                                        width="50%"))]))
+                                        width="37%")),
+
+                    html.Div([
+                        doc.Graph(figure=__update_nsidgraph(time_range,
+                                                            dns_server_name,
+                                                            probe_name),
+                                  style=dict(height=600),
+                                  config=dict(displayModeBar=False))],
+                             style=dict(display="inline-block",
+                                        width="26%"))
+
+                ]))
 
             return result
+
+        def __update_nsidgraph(time_range, dns_server_name, probe_name):
+
+            if (time_range is None) or \
+                    (dns_server_name is None) or \
+                    (probe_name is None) or \
+                    not time_range:
+                LOGGER.warning("lack of argument for update_ratiograph")
+                return dict()
+
+            start_time, end_time = \
+                self.__convert_range_index_to_time(time_range)
+
+            ret = self.rttviewer.session.query(
+                "select count(time_took) \
+                 from dnsprobe where \
+                 got_response = 'True' and \
+                 dst_name = $dst_name and \
+                 prb_id = $prb_id and \
+                 $start_time < time and \
+                 time < $end_time \
+                 group by nsid",
+                params=dict(params=json.dumps(
+                    dict(dst_name=dns_server_name,
+                         prb_id=probe_name,
+                         start_time=start_time,
+                         end_time=end_time))))
+
+            values = []
+            labels = []
+            title = "NSID Ratio<br />%s from %s" % (dns_server_name,
+                                                    probe_name)
+            legend_max_num = 4
+
+            for (measurement_name, tags) in ret.keys():
+                count = list(ret.get_points(measurement=measurement_name,
+                                            tags=tags))
+                if ("nsid" not in tags) or (len(count) != 1) or \
+                        ("count" not in count[0]):
+                    break
+                else:
+                    labels.append(tags["nsid"])
+                    values.append(count[0]["count"])
+
+            trace = go.Pie(values=values,
+                           labels=labels,
+                           name="",
+                           hoverinfo="label+percent+name",
+                           hole=0.4)
+
+            figure = dict(data=[trace],
+                          layout=dict(title=title,
+                                      showlegend=len(values) < legend_max_num))
+
+            return figure
 
         def __update_ratiograph(time_range, dns_server_name, probe_name):
 
