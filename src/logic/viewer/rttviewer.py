@@ -143,8 +143,8 @@ class RTTViewerLogic():
 
             values = []
             labels = []
-            title = "NSID Ratio<br />%s from %s" % (dns_server_name,
-                                                    probe_name)
+            title = "NSID Ratio(%s from %s)" % (dns_server_name,
+                                                probe_name)
             legend_max_num = 4
 
             for (measurement_name, tags) in ret.keys():
@@ -164,8 +164,19 @@ class RTTViewerLogic():
                            hole=0.4)
 
             figure = dict(data=[trace],
-                          layout=dict(title=title,
-                                      showlegend=len(values) < legend_max_num))
+                          layout=go.Layout(title=title,
+                                           legend=dict(orientation="h",
+                                                       font=dict(size=9),
+                                                       yanchor="top",
+                                                       x=0,
+                                                       y=1.02),
+                                           showlegend=(len(values) < 
+                                                       legend_max_num),
+                                           margin=dict(t=70,
+                                                       b=35,
+                                                       r=15,
+                                                       l=45
+                                                       )))
 
             return figure
 
@@ -189,8 +200,8 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "Answered Ratio<br />%s from %s" % (dns_server_name,
-                                                        probe_name)
+            title = "Answered Ratio(%s from %s)" % (dns_server_name,
+                                                    probe_name)
             labels = ["Unanswered", "Answered"]
             donut_size = 0.3
             hoverinfo = "label+percent+name"
@@ -262,9 +273,18 @@ class RTTViewerLogic():
                                      marker=dict(colors=["red", "green"])))
 
             figure = dict(data=traces,
-                          layout=dict(title=title,
-                                      grid=dict(rows=rows,
-                                                columns=columns)))
+                          layout=go.Layout(title=title,
+                                           margin=dict(t=70,
+                                                       b=35,
+                                                       r=15,
+                                                       l=45),
+                                           legend=dict(orientation="h",
+                                                       font=dict(size=9),
+                                                       yanchor="top",
+                                                       x=0.34,
+                                                       y=1.02),
+                                           grid=dict(rows=rows,
+                                                     columns=columns)))
 
             return figure
 
@@ -332,6 +352,10 @@ class RTTViewerLogic():
 
             figure = dict(data=traces,
                           layout=go.Layout(
+                              margin=dict(t=70,
+                                          b=35,
+                                          r=15,
+                                          l=45),
                               title=title,
                               showlegend=True,
                               xaxis=dict(title="UTC Time",
@@ -344,7 +368,7 @@ class RTTViewerLogic():
                                           font=dict(size=9),
                                           yanchor="top",
                                           x=0,
-                                          y=1.1)))
+                                          y=1.02)))
 
             return figure
 
@@ -355,10 +379,10 @@ class RTTViewerLogic():
         def update_map(probe_name, cnt):
 
             map_height = 850
-            map_scale = 1
+            map_scale = 1.1
             map_center_lat = 25
-            map_center_lon = 90
-            map_region = "asia"
+            map_center_lon = 0
+            map_region = "world"
             map_title = "Location of Probes"
             map_land_color = "rgb(235, 235, 235)"
             map_resolution = 50
@@ -406,8 +430,14 @@ class RTTViewerLogic():
                                                       symbol="circle",
                                                       color=color)))
 
-            layout = go.Layout(title=map_title,
+            layout = go.Layout(title=dict(text=map_title,
+                                          y=0.97),
                                height=map_height,
+                               margin=dict(t=0,
+                                           b=25,
+                                           pad=0,
+                                           r=0,
+                                           l=0),
                                geo=dict(lonaxis=dict(showgrid=True),
                                         lataxis=dict(showgrid=True),
                                         showcountries=True,
