@@ -30,12 +30,3 @@ $ git clone https://github.com/moratori/dnsprobe.git
 $ cd dnsprobe && pipenv install
 ```
 
-
-#### Run as Manager
-
-(TBD)
-
-
-#### Run as Measurer
-
-(TBD)
