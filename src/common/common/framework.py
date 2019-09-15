@@ -178,12 +178,14 @@ class SetupwithInfluxdb(BaseSetup):
         user = self.cnfg.data_store.user
         passwd = self.cnfg.data_store.passwd
         database = self.cnfg.data_store.database
+        enable_ssl = (ssl.lower() == "true")
         self.session = InfluxDBClient(host,
                                       int(port),
                                       user,
                                       passwd,
                                       database,
-                                      ssl=(ssl.lower() == "true"))
+                                      verify_ssl=enable_ssl,
+                                      ssl=enable_ssl)
 
     def start(self, **args):
         try:
