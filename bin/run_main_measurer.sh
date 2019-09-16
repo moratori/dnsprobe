@@ -12,6 +12,7 @@ SELF="`basename $0`"
 
 cd ${PROJECT_ROOT}
 
+timeout="55"
 
 # If exclusive control is required, please comment out the following
 if ! ln -s $$ "${LOCKS}/${SELF}" > /dev/null 2>&1; then
@@ -21,7 +22,7 @@ if ! ln -s $$ "${LOCKS}/${SELF}" > /dev/null 2>&1; then
 fi
 
 
-pipenv run ${SOURCES}/main_measurer.py $@
+timeout ${timeout} pipenv run ${SOURCES}/main_measurer.py $@
 return_code=$?
 
 # If exclusive control is required, please comment out the following
