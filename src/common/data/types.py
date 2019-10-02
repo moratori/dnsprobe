@@ -160,3 +160,12 @@ class SOA_DNSMeasurementData(DNSMeasurementData):
                       type=dns.rdatatype.to_text(rtype_obj))
 
         return result
+
+
+class NS_DNSMeasurementData(DNSMeasurementData):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+    def parser(self, qname_obj, rtype_obj, res):
+        return {}
