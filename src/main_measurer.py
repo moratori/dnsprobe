@@ -216,24 +216,24 @@ class Measurer(framework.SetupwithInfluxdb):
         latitude = self.cnfs.measurement.latitude
         longitude = self.cnfs.measurement.longitude
 
-        # todo: クエリのtypeに応じてクラスを使い分けられるよう修正
-        measured_data = types.SOA_DNSMeasurementData(current_time,
-                                                     time_diff,
-                                                     nameserver,
-                                                     dst,
-                                                     src,
-                                                     self.measurer_id,
-                                                     asn,
-                                                     asn_desc,
-                                                     self.server_boottime,
-                                                     latitude,
-                                                     longitude,
-                                                     af,
-                                                     proto,
-                                                     qname,
-                                                     rrtype,
-                                                     err,
-                                                     response)
+        measured_data = types.make_DNSMeasurementData(current_time,
+                                                      time_diff,
+                                                      nameserver,
+                                                      dst,
+                                                      src,
+                                                      self.measurer_id,
+                                                      asn,
+                                                      asn_desc,
+                                                      self.server_boottime,
+                                                      latitude,
+                                                      longitude,
+                                                      af,
+                                                      proto,
+                                                      qname,
+                                                      rrtype,
+                                                      err,
+                                                      response,
+                                                      self.cnfs.rdata_storing)
         return measured_data
 
     def measure_toplevel(self):
