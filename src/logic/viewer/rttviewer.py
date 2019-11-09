@@ -76,8 +76,9 @@ class RTTViewerLogic():
             [Input("main-content-menu-filter_measurement_time", "value"),
              Input("main-content-menu-filter_authoritatives", "value"),
              Input("main-content-menu-filter_probe", "value"),
+             Input("main-content-menu-filter_rrtype", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_graph(time_range, dns_server_names, probe_name, cnt):
+        def update_graph(time_range, dns_server_names, probe_name, rrtype, cnt):
 
             result = []
 
@@ -86,7 +87,8 @@ class RTTViewerLogic():
                     html.Div([
                         doc.Graph(figure=__update_rttgraph(time_range,
                                                            dns_server_name,
-                                                           probe_name),
+                                                           probe_name,
+                                                           rrtype),
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
@@ -95,7 +97,8 @@ class RTTViewerLogic():
                     html.Div([
                         doc.Graph(figure=__update_ratiograph(time_range,
                                                              dns_server_name,
-                                                             probe_name),
+                                                             probe_name,
+                                                             rrtype),
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
@@ -104,7 +107,8 @@ class RTTViewerLogic():
                     html.Div([
                         doc.Graph(figure=__update_nsidgraph(time_range,
                                                             dns_server_name,
-                                                            probe_name),
+                                                            probe_name,
+                                                            rrtype),
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
@@ -114,11 +118,12 @@ class RTTViewerLogic():
 
             return result
 
-        def __update_nsidgraph(time_range, dns_server_name, probe_name):
+        def __update_nsidgraph(time_range, dns_server_name, probe_name, rrtype):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
                     (probe_name is None) or \
+                    (rrtype is None) or \
                     not time_range:
                 LOGGER.warning("lack of argument for update_ratiograph")
                 return dict()
@@ -132,12 +137,14 @@ class RTTViewerLogic():
                  got_response = 'True' and \
                  dst_name = $dst_name and \
                  prb_id = $prb_id and \
+                 rrtype = $rrtype and \
                  $start_time < time and \
                  time < $end_time \
                  group by nsid",
                 params=dict(params=json.dumps(
                     dict(dst_name=dns_server_name,
                          prb_id=probe_name,
+                         rrtype=rrtype,
                          start_time=start_time,
                          end_time=end_time))))
 
@@ -180,11 +187,12 @@ class RTTViewerLogic():
 
             return figure
 
-        def __update_ratiograph(time_range, dns_server_name, probe_name):
+        def __update_ratiograph(time_range, dns_server_name, probe_name, rrtype):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
                     (probe_name is None) or \
+                    (rrtype is None) or \
                     not time_range:
                 LOGGER.warning("lack of argument for update_ratiograph")
                 return dict()
@@ -224,6 +232,7 @@ class RTTViewerLogic():
                      prb_id = $prb_id and \
                      af = $af and \
                      proto = $proto and \
+                     rrtype = $rrtype and \
                      $start_time < time and \
                      time < $end_time",
                     params=dict(params=json.dumps(
@@ -231,6 +240,7 @@ class RTTViewerLogic():
                              prb_id=probe_name,
                              af=af,
                              proto=proto,
+                             rrtype=rrtype,
                              start_time=start_time,
                              end_time=end_time))))
 
@@ -241,6 +251,7 @@ class RTTViewerLogic():
                      prb_id = $prb_id and \
                      af = $af and \
                      proto = $proto and \
+                     rrtype = $rrtype and \
                      $start_time < time and \
                      time < $end_time",
                     params=dict(params=json.dumps(
@@ -248,6 +259,7 @@ class RTTViewerLogic():
                              prb_id=probe_name,
                              af=af,
                              proto=proto,
+                             rrtype=rrtype,
                              start_time=start_time,
                              end_time=end_time))))
 
@@ -288,11 +300,12 @@ class RTTViewerLogic():
 
             return figure
 
-        def __update_rttgraph(time_range, dns_server_name, probe_name):
+        def __update_rttgraph(time_range, dns_server_name, probe_name, rrtype):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
                     (probe_name is None) or \
+                    (rrtype is None) or \
                     not time_range:
                 LOGGER.warning("lack of argument for update_rttgraph")
                 return dict()
@@ -324,6 +337,7 @@ class RTTViewerLogic():
                      got_response = 'True' and \
                      af = $af and \
                      proto = $proto and \
+                     rrtype = $rrtype and \
                      $start_time < time and \
                      time < $end_time",
                     params=dict(params=json.dumps(
@@ -331,6 +345,7 @@ class RTTViewerLogic():
                              prb_id=probe_name,
                              af=af,
                              proto=proto,
+                             rrtype=rrtype,
                              start_time=start_time,
                              end_time=end_time))))
 
