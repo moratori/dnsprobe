@@ -63,6 +63,11 @@ class Dnsprobe:
         result = [dict(label=each, value=each) for each in ret]
         return result
 
+    def make_rrtype_group(self):
+        ret = self.__show_tag_list("rrtype")
+        result = [dict(label=each, value=each) for each in ret]
+        return result
+
     def make_probe_locations(self):
         probe_list = self.__show_tag_list("prb_id")
         lats = []
