@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 import enum
+import json
+import base64
+import gzip
 import dns.name
 import dns.message
 import dns.query
@@ -30,6 +33,16 @@ class AddressFamily(enum.Enum):
         return "%s" % (self.name.lower())
 
 
+class SupportedRRType(enum.IntEnum):
+
+    SOA = dns.rdatatype.from_text("SOA")
+    NS = dns.rdatatype.from_text("NS")
+    DNSKEY = dns.rdatatype.from_text("DNSKEY")
+
+    def __str__(self):
+        return "%s" % (self.name.lower())
+
+
 class DNSMeasurementData():
 
     def __init__(self,
@@ -49,7 +62,8 @@ class DNSMeasurementData():
                  qname,
                  rrtype,
                  err,
-                 response):
+                 response,
+                 rdata_storing):
 
         self.current_time = current_time
         self.time_diff = time_diff
@@ -68,6 +82,7 @@ class DNSMeasurementData():
         self.rrtype = rrtype
         self.err = err
         self.response = response
+        self.rdata_storing = rdata_storing
 
     def __parse_response_to_fields(self, qname, rtype, res):
 
@@ -84,8 +99,20 @@ class DNSMeasurementData():
                            (qname, rtype))
             return {}
 
+    def rdata_encode(self, python_obj):
+        try:
+            json_string = json.dumps(python_obj)
+            LOGGER.debug("rdata json string: %s" % str(json_string))
+            b64_bytes = base64.b64encode(
+                gzip.compress(json_string.encode("utf8")))
+            return b64_bytes.decode("utf8")
+        except Exception as ex:
+            LOGGER.warning("unexpected error while converting \
+                           python object to base64: %s" % str(ex))
+            return ""
+
     def parser(self, qname_obj, rtype_obj, res):
-        pass
+        return {}
 
     def convert_influx_notation(self, measurement_name):
 
@@ -168,4 +195,116 @@ class NS_DNSMeasurementData(DNSMeasurementData):
         super().__init__(*positional, **kw)
 
     def parser(self, qname_obj, rtype_obj, res):
-        return {}
+
+        rrset = res.get_rrset(res.answer,
+                              qname_obj,
+                              dns.rdataclass.IN,
+                              rtype_obj)
+
+        if (rrset is None) or (len(rrset) == 0):
+            return {}
+
+        data = sorted([record.target.to_text()
+                       for record in rrset])
+
+        result = dict(id=res.id,
+                      ttl=rrset.ttl,
+                      name=str(rrset.name),
+                      data=self.rdata_encode(data),
+                      type=dns.rdatatype.to_text(rtype_obj))
+
+        return result
+
+
+class DNSKEY_DNSMeasurementData(DNSMeasurementData):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+    def parser(self, qname_obj, rtype_obj, res):
+
+        rrset = res.get_rrset(res.answer,
+                              qname_obj,
+                              dns.rdataclass.IN,
+                              rtype_obj)
+
+        if (rrset is None) or (len(rrset) == 0):
+            return {}
+
+        data = []
+        for record in rrset:
+            base = dict(flags=record.flags,
+                        algorithm=record.algorithm)
+            if self.rdata_storing.save_dnskey:
+                base.update(dict(
+                    key=base64.b64encode(record.key).decode("utf8")))
+            data.append(base)
+
+        data = sorted(data, key=((lambda x: x["key"])
+                                 if self.rdata_storing.save_dnskey
+                                 else (lambda x: x["flags"])))
+
+        result = dict(id=res.id,
+                      ttl=rrset.ttl,
+                      name=str(rrset.name),
+                      data=self.rdata_encode(data),
+                      type=dns.rdatatype.to_text(rtype_obj))
+
+        return result
+
+
+def make_DNSMeasurementData(current_time,
+                            time_diff,
+                            nameserver,
+                            dst,
+                            src,
+                            measurer_id,
+                            asn,
+                            asn_desc,
+                            server_boottime,
+                            latitude,
+                            longitude,
+                            af,
+                            proto,
+                            qname,
+                            rrtype,
+                            err,
+                            response,
+                            rdata_storing):
+
+    constractors = {SupportedRRType.SOA: SOA_DNSMeasurementData,
+                    SupportedRRType.NS: NS_DNSMeasurementData,
+                    SupportedRRType.DNSKEY: DNSKEY_DNSMeasurementData}
+
+    args = (current_time,
+            time_diff,
+            nameserver,
+            dst,
+            src,
+            measurer_id,
+            asn,
+            asn_desc,
+            server_boottime,
+            latitude,
+            longitude,
+            af,
+            proto,
+            qname,
+            rrtype,
+            err,
+            response,
+            rdata_storing)
+
+    rrtype_obj = dns.rdatatype.from_text(rrtype)
+
+    default = DNSMeasurementData(*args)
+    try:
+        target = SupportedRRType(rrtype_obj)
+        for supported in SupportedRRType:
+            if supported == target:
+                LOGGER.debug("parser class found for %s" % (str(rrtype)))
+                return constractors[target](*args)
+    except ValueError:
+        LOGGER.warning("unsupported RR type for parsing: %s" % (rrtype))
+    LOGGER.debug("parser class NOT found for %s" % (str(rrtype)))
+    return default
