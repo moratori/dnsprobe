@@ -65,14 +65,19 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
         authoritative_group = self.dao_dnsprobe.make_authoritative_group()
         probe_group = self.dao_dnsprobe.make_probe_group()
+        rrtype_group = self.dao_dnsprobe.make_rrtype_group()
         default_authoritative = None
         default_probe = None
+        default_rrtype = None
 
         if authoritative_group:
             default_authoritative = authoritative_group[0]["value"]
 
         if probe_group:
             default_probe = probe_group[0]["value"]
+
+        if rrtype_group:
+            default_rrtype = rrtype_group[0]["value"]
 
         menu = html.Div([
             html.Div([
@@ -97,10 +102,24 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=[default_authoritative],
                              multi=True)
             ], style=dict(display="inline-block",
-                          width="48%",
+                          width="30%",
                           marign="auto",
                           marginTop="3%",
                           marginRight="2%"
+                          )),
+
+            html.Div([
+                "Filter by Resource Record type:",
+                doc.Dropdown(id="main-content-menu-filter_rrtype",
+                             options=rrtype_group,
+                             value=default_rrtype,
+                             multi=False)
+            ], style=dict(display="inline-block",
+                          width="30%",
+                          marign="auto",
+                          marginTop="3%",
+                          marginRight="2%",
+                          marginLeft="2%"
                           )),
 
             html.Div([
@@ -110,7 +129,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=default_probe,
                              multi=False),
             ], style=dict(display="inline-block",
-                          width="48%",
+                          width="30%",
                           margin="auto",
                           marginTop="3%",
                           marginLeft="2%"))
