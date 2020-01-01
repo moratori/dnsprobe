@@ -9,7 +9,6 @@ import plotly.graph_objs as go
 import html as snt
 
 import os
-import json
 import datetime
 import math
 
