@@ -102,6 +102,11 @@ class Dnsprobe:
 
     def get_probe_last_measured(self, probe_id):
 
+        lasttime_value = "unknown"
+
+        # performance issue #45
+        return lasttime_value
+
         proc_start = time.time()
 
         ret_uptime = self.app.session.query(
@@ -114,8 +119,6 @@ class Dnsprobe:
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
-        lasttime_value = "unknown"
-
         for uptimes in ret_uptime:
             for uptime in uptimes:
                 lasttime_value = uptime["time"]
@@ -123,6 +126,11 @@ class Dnsprobe:
         return str(lasttime_value)
 
     def get_probe_uptime(self, probe_id):
+
+        uptime_value = "unknown"
+
+        # performance issue #45
+        return uptime_value
 
         proc_start = time.time()
 
@@ -136,8 +144,6 @@ class Dnsprobe:
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
-        uptime_value = "unknown"
-
         for uptimes in ret_uptime:
             for uptime in uptimes:
                 uptime_value = uptime["probe_uptime"]
@@ -145,10 +151,14 @@ class Dnsprobe:
         return str(uptime_value)
 
     def get_probe_net_desc(self, probe_id):
+
         v4_asn = "unknown"
         v4_desc = "unknown"
         v6_asn = "unknown"
         v6_desc = "unknown"
+
+        # performance issue #45
+        return v4_asn, v4_desc, v6_asn, v6_desc
 
         proc_start = time.time()
 
