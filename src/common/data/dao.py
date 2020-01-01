@@ -3,6 +3,7 @@
 import common.data.types as types
 
 import json
+import time
 
 from logging import getLogger
 from sqlalchemy import Column, Integer, String, Enum
@@ -45,8 +46,13 @@ class Dnsprobe:
     def __show_tag_list(self, tag):
         # tag parameter MUST BE TRUSTED value
         # unable to use `bind-parameter` for `with key` statement
+        proc_start = time.time()
+
         ret = self.app.session.query("show tag values with key = %s" %
                                      (tag))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
         result = []
         for each in ret:
             for record in each:
@@ -73,10 +79,15 @@ class Dnsprobe:
         lats = []
         lons = []
         for prb_id in probe_list:
+
+            proc_start = time.time()
+
             ret = self.app.session.query(
                 "show tag values with key in \
                 (prb_lat, prb_lon) where prb_id = $prb_id",
                 params=dict(params=json.dumps(dict(prb_id=prb_id))))
+
+            LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
             for each in ret:
                 for record in each:
@@ -90,6 +101,9 @@ class Dnsprobe:
         return probe_list, lats, lons
 
     def get_probe_last_measured(self, probe_id):
+
+        proc_start = time.time()
+
         ret_uptime = self.app.session.query(
                     "select time, time_took from dnsprobe where \
                      prb_id = $prb_id \
@@ -97,6 +111,8 @@ class Dnsprobe:
                      limit 1",
                     params=dict(params=json.dumps(
                         dict(prb_id=probe_id))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
         lasttime_value = "unknown"
 
@@ -107,6 +123,9 @@ class Dnsprobe:
         return str(lasttime_value)
 
     def get_probe_uptime(self, probe_id):
+
+        proc_start = time.time()
+
         ret_uptime = self.app.session.query(
                     "select probe_uptime from dnsprobe where \
                      prb_id = $prb_id \
@@ -114,6 +133,8 @@ class Dnsprobe:
                      limit 1",
                     params=dict(params=json.dumps(
                         dict(prb_id=probe_id))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
         uptime_value = "unknown"
 
@@ -129,6 +150,8 @@ class Dnsprobe:
         v6_asn = "unknown"
         v6_desc = "unknown"
 
+        proc_start = time.time()
+
         ret_desc = self.app.session.query(
             "select probe_asn, probe_asn_desc \
              from dnsprobe  \
@@ -138,6 +161,8 @@ class Dnsprobe:
              limit 1",
             params=dict(params=json.dumps(
                 dict(prb_id=probe_id))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
         try:
             LOGGER.debug("ip description object: %s" % (str(ret_desc)))
@@ -157,6 +182,8 @@ class Dnsprobe:
 
     def get_af_proto_combination(self, dns_server_name, probe_name):
 
+        proc_start = time.time()
+
         ret_af = self.app.session.query(
             "show tag values with key = af where \
              dst_name = $dst_name and prb_id = $prb_id",
@@ -169,6 +196,8 @@ class Dnsprobe:
             params=dict(params=json.dumps(dict(dst_name=dns_server_name,
                                                prb_id=probe_name))))
 
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
         result = []
 
         for afs in ret_af:
@@ -180,6 +209,123 @@ class Dnsprobe:
                         result.append((af_value, proto_value))
 
         return result
+
+    def get_rttgraph_data(self, dns_server_name, probe_name, af, proto, rrtype,
+                          start_time, end_time):
+
+        proc_start = time.time()
+
+        ret = self.app.session.query(
+            "select time,time_took from dnsprobe where \
+             dst_name = $dst_name and \
+             prb_id = $prb_id and \
+             got_response = 'True' and \
+             af = $af and \
+             proto = $proto and \
+             rrtype = $rrtype and \
+             $start_time < time and \
+             time < $end_time",
+            params=dict(params=json.dumps(
+                dict(dst_name=dns_server_name,
+                     prb_id=probe_name,
+                     af=af,
+                     proto=proto,
+                     rrtype=rrtype,
+                     start_time=start_time,
+                     end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        x = []
+        y = []
+        for records in ret:
+            for data in records:
+                x.append(data["time"])
+                y.append(data["time_took"])
+
+        return x, y
+
+    def get_nsidgraph_data(self, dns_server_name, probe_name, rrtype,
+                           start_time, end_time):
+
+        proc_start = time.time()
+
+        ret = self.app.session.query(
+            "select count(time_took) \
+             from dnsprobe where \
+             got_response = 'True' and \
+             dst_name = $dst_name and \
+             prb_id = $prb_id and \
+             rrtype = $rrtype and \
+             $start_time < time and \
+             time < $end_time \
+            group by nsid",
+            params=dict(params=json.dumps(
+                dict(dst_name=dns_server_name,
+                     prb_id=probe_name,
+                     rrtype=rrtype,
+                     start_time=start_time,
+                     end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return ret
+
+    def get_ratiograph_unanswered(self, dns_server_name, probe_name, af, proto,
+                                  rrtype, start_time, end_time):
+
+        proc_start = time.time()
+
+        unanswered = self.app.session.query(
+            "select count(time_took) from dnsprobe where \
+             got_response = 'False' and \
+             dst_name = $dst_name and \
+             prb_id = $prb_id and \
+             af = $af and \
+             proto = $proto and \
+             rrtype = $rrtype and \
+             $start_time < time and \
+             time < $end_time",
+            params=dict(params=json.dumps(
+                dict(dst_name=dns_server_name,
+                     prb_id=probe_name,
+                     af=af,
+                     proto=proto,
+                     rrtype=rrtype,
+                     start_time=start_time,
+                     end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return unanswered
+
+    def get_ratiograph_answered(self, dns_server_name, probe_name, af, proto,
+                                rrtype, start_time, end_time):
+
+        proc_start = time.time()
+
+        answered = self.app.session.query(
+            "select count(time_took) from dnsprobe where \
+             got_response = 'True' and \
+             dst_name = $dst_name and \
+             prb_id = $prb_id and \
+             af = $af and \
+             proto = $proto and \
+             rrtype = $rrtype and \
+             $start_time < time and \
+             time < $end_time",
+            params=dict(params=json.dumps(
+                dict(dst_name=dns_server_name,
+                     prb_id=probe_name,
+                     af=af,
+                     proto=proto,
+                     rrtype=rrtype,
+                     start_time=start_time,
+                     end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return answered
 
     def write_measurement_data(self, measured_data):
         ret = False

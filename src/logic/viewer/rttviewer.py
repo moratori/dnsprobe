@@ -131,22 +131,12 @@ class RTTViewerLogic():
             start_time, end_time = \
                 self.__convert_range_index_to_time(time_range)
 
-            ret = self.rttviewer.session.query(
-                "select count(time_took) \
-                 from dnsprobe where \
-                 got_response = 'True' and \
-                 dst_name = $dst_name and \
-                 prb_id = $prb_id and \
-                 rrtype = $rrtype and \
-                 $start_time < time and \
-                 time < $end_time \
-                 group by nsid",
-                params=dict(params=json.dumps(
-                    dict(dst_name=dns_server_name,
-                         prb_id=probe_name,
-                         rrtype=rrtype,
-                         start_time=start_time,
-                         end_time=end_time))))
+            ret = self.rttviewer.dao_dnsprobe.get_nsidgraph_data(
+                dns_server_name,
+                probe_name,
+                rrtype,
+                start_time,
+                end_time)
 
             values = []
             labels = []
@@ -177,7 +167,7 @@ class RTTViewerLogic():
                                                        yanchor="top",
                                                        x=0,
                                                        y=1.02),
-                                           showlegend=(len(values) < 
+                                           showlegend=(len(values) <
                                                        legend_max_num),
                                            margin=dict(t=70,
                                                        b=35,
@@ -225,43 +215,25 @@ class RTTViewerLogic():
                 r = int(n / row_tiling_num)
                 c = int(n % row_tiling_num)
 
-                unanswered = self.rttviewer.session.query(
-                    "select count(time_took) from dnsprobe where \
-                     got_response = 'False' and \
-                     dst_name = $dst_name and \
-                     prb_id = $prb_id and \
-                     af = $af and \
-                     proto = $proto and \
-                     rrtype = $rrtype and \
-                     $start_time < time and \
-                     time < $end_time",
-                    params=dict(params=json.dumps(
-                        dict(dst_name=dns_server_name,
-                             prb_id=probe_name,
-                             af=af,
-                             proto=proto,
-                             rrtype=rrtype,
-                             start_time=start_time,
-                             end_time=end_time))))
+                unanswered = \
+                    self.rttviewer.dao_dnsprobe.get_ratiograph_unanswered(
+                        dns_server_name,
+                        probe_name,
+                        af,
+                        proto,
+                        rrtype,
+                        start_time,
+                        end_time)
 
-                answered = self.rttviewer.session.query(
-                    "select count(time_took) from dnsprobe where \
-                     got_response = 'True' and \
-                     dst_name = $dst_name and \
-                     prb_id = $prb_id and \
-                     af = $af and \
-                     proto = $proto and \
-                     rrtype = $rrtype and \
-                     $start_time < time and \
-                     time < $end_time",
-                    params=dict(params=json.dumps(
-                        dict(dst_name=dns_server_name,
-                             prb_id=probe_name,
-                             af=af,
-                             proto=proto,
-                             rrtype=rrtype,
-                             start_time=start_time,
-                             end_time=end_time))))
+                answered = \
+                    self.rttviewer.dao_dnsprobe.get_ratiograph_answered(
+                        dns_server_name,
+                        probe_name,
+                        af,
+                        proto,
+                        rrtype,
+                        start_time,
+                        end_time)
 
                 unanswered_count = 0
                 for records in unanswered:
@@ -330,31 +302,15 @@ class RTTViewerLogic():
             traces = []
             for (af, proto) in af_proto_combination:
 
-                ret = self.rttviewer.session.query(
-                    "select time,time_took from dnsprobe where \
-                     dst_name = $dst_name and \
-                     prb_id = $prb_id and \
-                     got_response = 'True' and \
-                     af = $af and \
-                     proto = $proto and \
-                     rrtype = $rrtype and \
-                     $start_time < time and \
-                     time < $end_time",
-                    params=dict(params=json.dumps(
-                        dict(dst_name=dns_server_name,
-                             prb_id=probe_name,
-                             af=af,
-                             proto=proto,
-                             rrtype=rrtype,
-                             start_time=start_time,
-                             end_time=end_time))))
-
-                x = []
-                y = []
-                for records in ret:
-                    for data in records:
-                        x.append(data["time"])
-                        y.append(data["time_took"])
+                x, y = \
+                    self.rttviewer.dao_dnsprobe.get_rttgraph_data(
+                        dns_server_name,
+                        probe_name,
+                        af,
+                        proto,
+                        rrtype,
+                        start_time,
+                        end_time)
 
                 if not (x and y):
                     continue
