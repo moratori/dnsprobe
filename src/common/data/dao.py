@@ -337,6 +337,63 @@ class Dnsprobe:
 
         return answered
 
+    def get_percentilegraph_data(self, dns_server_name, probe_name, rrtype,
+                                 start_time, end_time):
+
+        default_step = 20
+        xaxis_step = int(self.app.cnfs.graph.percentile_axis_step)
+
+        if 100 % xaxis_step != 0:
+            xaxis_step = default_step
+
+        proc_start = time.time()
+        result = {}
+
+        for each_step in range(0, 100+1, xaxis_step):
+
+            percentile = self.app.session.query(
+                "select percentile(time_took, $each_step) \
+                 from dnsprobe \
+                 where \
+                 got_response = 'True' and \
+                 time > $start_time and \
+                 time < $end_time and \
+                 dst_name = $dst_name and \
+                 rrtype = $rrtype and \
+                 prb_id = $prb_id \
+                 group by af, proto",
+                params=dict(params=json.dumps(
+                    dict(each_step=each_step,
+                         dst_name=dns_server_name,
+                         prb_id=probe_name,
+                         rrtype=rrtype,
+                         start_time=start_time,
+                         end_time=end_time))))
+
+            for (measurement_name, tags) in percentile.keys():
+                record = list(percentile.get_points(
+                    measurement=measurement_name,
+                    tags=tags))
+
+                if ("af" not in tags) or ("proto" not in tags) or \
+                        (len(record) != 1) or ("percentile" not in record[0]):
+                    LOGGER.warning(str(tags))
+                    LOGGER.warning(str(record))
+                    LOGGER.warning("unexpected influxdb scheme")
+                    continue
+
+                key = (tags["af"], tags["proto"])
+                value = record[0]["percentile"]
+                if key in result:
+                    result[key][0].append(value)
+                    result[key][1].append(each_step)
+                else:
+                    result[key] = ([value], [each_step])
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return result
+
     def write_measurement_data(self, measured_data):
         ret = False
 

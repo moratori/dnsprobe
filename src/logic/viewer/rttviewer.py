@@ -82,6 +82,7 @@ class RTTViewerLogic():
             result = []
 
             for dns_server_name in reversed(dns_server_names):
+
                 result.append(html.Div([
                     html.Div([
                         doc.Graph(figure=__update_rttgraph(time_range,
@@ -111,13 +112,82 @@ class RTTViewerLogic():
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
-                                        width="26%"))
+                                        width="26%")),
 
+                    html.Div([
+                        doc.Graph(figure=__update_percentilegraph(
+                            time_range,
+                            dns_server_name,
+                            probe_name,
+                            rrtype),
+                                  style=dict(height=350),
+                                  config=dict(displayModeBar=False))],
+                             style=dict(width="96%",
+                                        marginLeft="auto",
+                                        marginRight="auto"))
                 ]))
 
             return result
 
-        def __update_nsidgraph(time_range, dns_server_name, probe_name, rrtype):
+        def __update_percentilegraph(time_range, dns_server_name, probe_name,
+                                     rrtype):
+
+            if (time_range is None) or \
+                    (dns_server_name is None) or \
+                    (probe_name is None) or \
+                    (rrtype is None) or \
+                    not time_range:
+                LOGGER.warning("lack of argument for update_percentilegraph")
+                return dict()
+
+            start_time, end_time = \
+                self.__convert_range_index_to_time(time_range)
+
+            ret = self.rttviewer.dao_dnsprobe.get_percentilegraph_data(
+                dns_server_name,
+                probe_name,
+                rrtype,
+                start_time,
+                end_time)
+
+            LOGGER.debug("timerange: %s ~ %s" % (start_time, end_time))
+            LOGGER.debug("percentile raw data: %s" % (str(ret)))
+
+            traces = []
+
+            for (af, proto) in ret.keys():
+                x, y = ret[(af, proto)]
+                traces.append(go.Scatter(mode="lines",
+                                         x=x,
+                                         y=y,
+                                         name=snt.escape("%s over IPv%s" %
+                                                         (proto.upper(), af))))
+
+            figure = dict(data=traces,
+                          layout=go.Layout(
+                              margin=dict(t=70,
+                                          b=35,
+                                          r=15,
+                                          l=45),
+                              title="Round Trip Time Percentile",
+                              showlegend=True,
+                              xaxis=dict(title="Round Trip Time(msec)",
+                                         autorange=True,
+                                         type="log",
+                                         rangemode="tozero"),
+                              yaxis=dict(title="Percentile",
+                                         autorange=True,
+                                         rangemode="tozero"),
+                              legend=dict(orientation="h",
+                                          font=dict(size=9),
+                                          yanchor="top",
+                                          x=0,
+                                          y=1.02)))
+
+            return figure
+
+        def __update_nsidgraph(time_range, dns_server_name, probe_name,
+                               rrtype):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
@@ -176,7 +246,8 @@ class RTTViewerLogic():
 
             return figure
 
-        def __update_ratiograph(time_range, dns_server_name, probe_name, rrtype):
+        def __update_ratiograph(time_range, dns_server_name, probe_name,
+                                rrtype):
 
             if (time_range is None) or \
                     (dns_server_name is None) or \
