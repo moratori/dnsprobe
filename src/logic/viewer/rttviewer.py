@@ -122,7 +122,7 @@ class RTTViewerLogic():
                             rrtype),
                                   style=dict(height=350),
                                   config=dict(displayModeBar=False))],
-                             style=dict(width="96%",
+                             style=dict(width="100%",
                                         marginLeft="auto",
                                         marginRight="auto"))
                 ]))
