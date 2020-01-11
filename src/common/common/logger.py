@@ -26,7 +26,7 @@ def setup_logger(module_name, file_path, loglevel, rotation_timing, bkcount):
                       "INFO": INFO,
                       "DEBUG": DEBUG}
 
-    rotation_timing_table = set(["S", "M", "H", "D"])
+    rotation_timing_table = set(["S", "M", "H", "D", "MIDNIGHT"])
 
     if loglevel not in loglevel_table:
         loglevel = INFO
@@ -34,7 +34,7 @@ def setup_logger(module_name, file_path, loglevel, rotation_timing, bkcount):
         loglevel = loglevel_table[loglevel]
 
     if rotation_timing not in rotation_timing_table:
-        rotation_timing = "D"
+        rotation_timing = "MIDNIGHT"
     else:
         rotation_timing = rotation_timing
 
