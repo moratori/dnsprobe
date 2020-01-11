@@ -6,3 +6,7 @@ body {
 #main{
         background-color: #ffffff;
 }
+
+._dash-undo-redo {
+  display: none;
+}
