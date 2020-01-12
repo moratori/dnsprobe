@@ -182,7 +182,7 @@ class RTTViewerLogic():
                                           font=dict(size=9),
                                           yanchor="top",
                                           x=0,
-                                          y=1.02)))
+                                          y=1.1)))
 
             return figure
 

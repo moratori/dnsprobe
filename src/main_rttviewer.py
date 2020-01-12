@@ -102,10 +102,10 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=[default_authoritative],
                              multi=True)
             ], style=dict(display="inline-block",
-                          width="30%",
+                          width="32%",
                           marign="auto",
                           marginTop="3%",
-                          marginRight="2%"
+                          marginRight="1%"
                           )),
 
             html.Div([
@@ -115,11 +115,11 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=default_rrtype,
                              multi=False)
             ], style=dict(display="inline-block",
-                          width="30%",
+                          width="32%",
                           marign="auto",
                           marginTop="3%",
-                          marginRight="2%",
-                          marginLeft="2%"
+                          marginRight="1%",
+                          marginLeft="1%"
                           )),
 
             html.Div([
@@ -129,10 +129,10 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=default_probe,
                              multi=False),
             ], style=dict(display="inline-block",
-                          width="30%",
+                          width="32%",
                           margin="auto",
                           marginTop="3%",
-                          marginLeft="2%"))
+                          marginLeft="1%"))
 
         ], id="main-content-menu",
             style=dict(marginBottom="1.5%"))
