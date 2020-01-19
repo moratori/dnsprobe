@@ -14,7 +14,6 @@ import dash_core_components as doc
 import traceback
 import os
 import sys
-import argparse
 import dash
 
 
@@ -27,28 +26,6 @@ class RTTViewer(framework.SetupwithInfluxdb):
         super().__init__(__name__, __file__)
         self.dao_dnsprobe = dao.Dnsprobe(self)
         self.logic = rttviewerlogic.RTTViewerLogic(self)
-
-    def setup_commandline_argument(self):
-        argument_parser = argparse.ArgumentParser()
-
-        argument_parser.add_argument("--host",
-                                     type=str,
-                                     default="0.0.0.0",
-                                     help="host to bind")
-        argument_parser.add_argument("--port",
-                                     type=int,
-                                     default=8080,
-                                     help="port to bind")
-        argument_parser.add_argument("--debug",
-                                     action="store_true",
-                                     help="whether to set debug mode")
-        argument_parser.add_argument("--offline",
-                                     action="store_true",
-                                     default=True,
-                                     help="disable loading resources from cdn")
-
-        self.args = argument_parser.parse_args()
-        self.validate_commandline_argument()
 
     def make_header(self):
 
@@ -203,22 +180,21 @@ class RTTViewer(framework.SetupwithInfluxdb):
                           border="1px solid #eee",
                           bacgroundColor="#ffffff"))])
 
-    def setup_app(self):
+    def setup_application(self):
         self.application = dash.Dash(__name__)
         self.application.server.url_map.converters["regex"] = \
             rttviewerlogic.RegexConverter
-        self.application.css.config.serve_locally = self.args.offline
-        self.application.scripts.config.serve_locally = self.args.offline
+        self.application.css.config.serve_locally = self.cnfs.server.offline
+        self.application.scripts.config.serve_locally = self.cnfs.server.offline
         self.application.title = "RTT monitor"
 
         self.set_layout()
         self.logic.setup_logic()
 
     def run(self):
-        self.setup_app()
-        self.application.run_server(debug=self.args.debug,
-                                    host=self.args.host,
-                                    port=self.args.port)
+        self.application.run_server(debug=self.cnfs.server.debug,
+                                    host=self.cnfs.server.host,
+                                    port=self.cnfs.server.port)
 
 
 def nakedserver():
@@ -237,7 +213,7 @@ def wsgiserver(*positional, **kw):
     try:
         if SLV is None:
             slv = RTTViewer()
-            slv.setup_app()
+            slv.setup_application()
             SLV = slv
         return SLV.application.server(*positional, **kw)
     except Exception:

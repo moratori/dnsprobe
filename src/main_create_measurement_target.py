@@ -13,7 +13,6 @@ import traceback
 import os
 import sys
 import json
-import argparse
 
 
 class CreateMeasurementTarget(framework.SetupwithMySQLdb):
@@ -21,23 +20,10 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
     def __init__(self):
         super().__init__(__name__, __file__)
 
-    def setup_commandline_argument(self):
-        argument_parser = argparse.ArgumentParser()
-
-        argument_parser.add_argument("primary",
-                                     type=str,
-                                     help="ip address for full resolver")
-
-        argument_parser.add_argument("secondary",
-                                     type=str,
-                                     help="ip address for full resolver")
-
-        self.args = argument_parser.parse_args()
-        self.validate_commandline_argument()
-
     def run(self):
         measurement_infos = self.retrieve_measurement_info()
-        fullresolvers = [self.args.primary, self.args.secondary]
+        fullresolvers = [self.cnfs.nameserver.primary,
+                         self.cnfs.nameserver.secondary]
 
         result = self.construct_json_data(measurement_infos, fullresolvers)
         self.save_json_data(result)

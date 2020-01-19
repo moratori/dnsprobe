@@ -10,7 +10,6 @@ import common.data.dao as dao
 import traceback
 import sys
 import os
-import argparse
 import flask
 from flask import render_template
 
@@ -26,24 +25,6 @@ class MeasurerController(framework.SetupwithMySQLdb):
                                   static_folder=config.STATIC_DIR,
                                   template_folder=config.TEMPLATES_DIR)
         self.setup_server_route()
-
-    def setup_commandline_argument(self):
-        argument_parser = argparse.ArgumentParser()
-
-        argument_parser.add_argument("--host",
-                                     type=str,
-                                     default="0.0.0.0",
-                                     help="host to bind")
-        argument_parser.add_argument("--port",
-                                     type=int,
-                                     default=8080,
-                                     help="port to bind")
-        argument_parser.add_argument("--debug",
-                                     action="store_true",
-                                     help="whether to set debug mode")
-
-        self.args = argument_parser.parse_args()
-        self.validate_commandline_argument()
 
     def index(self):
         return render_template("index.tmpl")
@@ -76,7 +57,8 @@ class MeasurerController(framework.SetupwithMySQLdb):
                                  self.edit_measurement_target)
 
     def run(self):
-        self.server.run(host=self.args.host, port=self.args.port)
+        self.server.run(host=self.cnfs.server.host,
+                        port=self.cnfs.server.port)
 
 
 def nakedserver():

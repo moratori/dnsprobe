@@ -7,6 +7,7 @@ docstring is here
 import common.common.framework as framework
 import common.data.dao as dao
 import common.data.types as types
+import common.data.errors as errors
 
 import requests
 import traceback
@@ -34,13 +35,6 @@ class Measurer(framework.SetupwithInfluxdb):
 
     def __init__(self):
         super().__init__(__name__, __file__)
-        self.__set_measurer_id()
-        self.__set_global_ipaddress()
-        self.__set_server_boottime()
-        self.__validate_id()
-        self.__set_net_description()
-        self.__load_measurement_info()
-        self.dao_dnsprobe = dao.Dnsprobe(self)
 
     def __set_measurer_id(self):
         hostname = socket.gethostname()
@@ -97,7 +91,7 @@ class Measurer(framework.SetupwithInfluxdb):
     def __validate_id(self):
         if self.ipv4 is None or self.ipv6 is None:
             self.logger.critical("measurer must have global IPv4/IPv6 address")
-            sys.exit(1)
+            raise errors.DNSProbeError("failed to validate ipaddress")
 
     def __set_net_description(self):
 
@@ -238,8 +232,8 @@ class Measurer(framework.SetupwithInfluxdb):
 
     def measure_toplevel(self):
 
-        tcp_timeout = float(self.cnfs.measurement.tcp_timeout)
-        udp_timeout = float(self.cnfs.measurement.udp_timeout)
+        tcp_timeout = self.cnfs.measurement.tcp_timeout
+        udp_timeout = self.cnfs.measurement.udp_timeout
         current_time = str(datetime.datetime.utcnow().isoformat()) + "Z"
         result = []
 
@@ -319,12 +313,21 @@ class Measurer(framework.SetupwithInfluxdb):
 
         return result
 
+    def setup_application(self):
+        self.__set_measurer_id()
+        self.__set_global_ipaddress()
+        self.__set_server_boottime()
+        self.__validate_id()
+        self.__set_net_description()
+        self.__load_measurement_info()
+        self.dao_dnsprobe = dao.Dnsprobe(self)
+
     def run(self):
         result = self.measure_toplevel()
         ret = self.dao_dnsprobe.write_measurement_data(result)
         if not ret:
-            sys.exit(1)
-        sys.exit(0)
+            return 1
+        return 0
 
 
 if __name__ == "__main__":
