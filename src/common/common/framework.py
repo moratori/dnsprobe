@@ -10,6 +10,7 @@ import namedtupled
 import sys
 import traceback
 import json
+import threading
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -33,10 +34,14 @@ class BaseSetup(object):
         self.load_config()
         self.validate_config()
         self.prepare_logger()
+        self.tmp_data_mutex = threading.BoundedSemaphore(value=1)
 
     def load_tmpdata(self):
 
-        tmpfilename = os.path.join(config.TMP_DIR, self.script_name)
+        specific_config_basename = os.path.basename(self.script_name)
+
+        tmpfilename = os.path.join(config.TMP_DIR,
+                                   specific_config_basename)
 
         if not (os.path.isdir(config.TMP_DIR) and os.path.isfile(tmpfilename)):
             self.logger.info("tmpdata file(%s) not found. loading skipped" %
@@ -45,9 +50,10 @@ class BaseSetup(object):
             return
 
         try:
-            with open(tmpfilename, "r", encoding="utf8") as handle:
-                    self.tmp_data = json.load(handle)
-            self.logger.info("reading finished in properly")
+            with self.tmp_data_mutex,\
+                    open(tmpfilename, "r", encoding="utf8") as handle:
+                self.tmp_data = json.load(handle)
+            self.logger.info("loading finished in properly")
         except Exception as ex:
             self.logger.warning("unable to load tmpdata from %s: %s" %
                                 (tmpfilename, str(ex)))
@@ -57,28 +63,32 @@ class BaseSetup(object):
 
     def write_tmpdata(self):
 
-        # 排他制御はないので、バッチの起動制御で対応する
+        specific_config_basename = os.path.basename(self.script_name)
 
-        tmpfilename = os.path.join(config.TMP_DIR, self.script_name)
+        tmpfilename = os.path.join(config.TMP_DIR,
+                                   specific_config_basename)
 
-        if not os.path.isdir(config.TMP_DIR):
+        with self.tmp_data_mutex:
             try:
-                os.mkdir(config.TMP_DIR)
-            except FileExistsError as ex:
-                self.logger.warning("fileexists error while making dir: %s" %
-                                    (str(ex)))
+                if not os.path.isdir(config.TMP_DIR):
+                    try:
+                        os.mkdir(config.TMP_DIR)
+                    except FileExistsError as ex:
+                        self.logger.warning(
+                            "fileexists error while making dir: %s"
+                            % (str(ex)))
+                    except Exception as ex:
+                        self.logger.warning(
+                            "error occurred while making dir: %s"
+                            % (str(ex)))
+                        self.logger.error("unable to make directory")
+                        return
+                with open(tmpfilename, "w", encoding="utf8") as handle:
+                    json.dump(self.tmp_data, handle)
+                self.logger.info("writing finished in properly")
             except Exception as ex:
-                self.logger.warning("error occurred while making dir: %s" %
-                                    (str(ex)))
-                self.logger.error("unable to make directory")
-                return
-        try:
-            with open(tmpfilename, "w", encoding="utf8") as handle:
-                json.dump(self.tmp_data, handle)
-            self.logger.info("writing finished in properly")
-        except Exception as ex:
-            self.logger.warning("unable to write tmp data to %s: %s" %
-                                (tmpfilename, str(ex)))
+                self.logger.warning("unable to write tmp data to %s: %s" %
+                                    (tmpfilename, str(ex)))
 
     def convert_config_type(self, config):
         if isinstance(config, str):
