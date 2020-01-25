@@ -185,7 +185,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
         self.application.server.url_map.converters["regex"] = \
             rttviewerlogic.RegexConverter
         self.application.css.config.serve_locally = self.cnfs.server.offline
-        self.application.scripts.config.serve_locally = self.cnfs.server.offline
+        self.application.scripts.config.serve_locally = \
+            self.cnfs.server.offline
         self.application.title = "RTT monitor"
 
         self.set_layout()
@@ -200,12 +201,11 @@ class RTTViewer(framework.SetupwithInfluxdb):
 def nakedserver():
     try:
         slv = RTTViewer()
-        slv.start()
     except Exception:
-        # LOGGERのセットアップ自体にも失敗している可能性ありの為
-        # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
+
+    slv.start()
 
 
 def wsgiserver(*positional, **kw):
@@ -213,12 +213,11 @@ def wsgiserver(*positional, **kw):
     try:
         if SLV is None:
             slv = RTTViewer()
+            slv.setup_resource()
             slv.setup_application()
             SLV = slv
         return SLV.application.server(*positional, **kw)
     except Exception:
-        # LOGGERのセットアップ自体にも失敗している可能性ありの為
-        # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
 

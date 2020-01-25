@@ -95,9 +95,8 @@ if __name__ == "__main__":
 
     try:
         cmt = CreateMeasurementTarget()
-        cmt.start()
     except Exception:
-        # LOGGERのセットアップ自体にも失敗している可能性ありの為
-        # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
+
+    cmt.start()

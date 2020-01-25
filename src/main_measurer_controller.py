@@ -24,7 +24,6 @@ class MeasurerController(framework.SetupwithMySQLdb):
         self.server = flask.Flask(__name__,
                                   static_folder=config.STATIC_DIR,
                                   template_folder=config.TEMPLATES_DIR)
-        self.setup_server_route()
 
     def index(self):
         return render_template("index.tmpl")
@@ -47,7 +46,7 @@ class MeasurerController(framework.SetupwithMySQLdb):
                                             "measurement_target.tmpl"),
                                measurement_infos=data)
 
-    def setup_server_route(self):
+    def setup_application(self):
         self.server.add_url_rule("/",
                                  "index",
                                  self.index)
@@ -64,12 +63,11 @@ class MeasurerController(framework.SetupwithMySQLdb):
 def nakedserver():
     try:
         mc = MeasurerController()
-        mc.start()
     except Exception:
-        # LOGGERのセットアップ自体にも失敗している可能性ありの為
-        # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
+
+    mc.start()
 
 
 def wsgiserver(*positional, **kw):
@@ -77,11 +75,11 @@ def wsgiserver(*positional, **kw):
     try:
         if MC is None:
             mc = MeasurerController()
+            mc.setup_resource()
+            mc.setup_application()
             MC = mc
         return MC.server(*positional, **kw)
     except Exception:
-        # LOGGERのセットアップ自体にも失敗している可能性ありの為
-        # 標準出力にログ出力
         print(traceback.format_exc())
         sys.exit(1)
 

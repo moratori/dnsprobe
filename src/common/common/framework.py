@@ -22,13 +22,17 @@ class BaseSetup(object):
     CONF_EXT = ".ini"
     GENERAL_CONF_NAME = "general" + CONF_EXT
 
+    RET_NORMAL_END = 0
+    RET_KEY_INTERRUPTED_END = 1
+    RET_ABNORMAL_END = 100
+
     def __init__(self, module_name, script_name):
         self.module_name = module_name
         self.script_name = script_name
+        self.tmp_data = {}
         self.load_config()
         self.validate_config()
-        self.setup_logger()
-        self.load_tmpdata()
+        self.prepare_logger()
 
     def load_tmpdata(self):
 
@@ -122,12 +126,15 @@ class BaseSetup(object):
     def validate_config(self):
         pass
 
-    def setup_logger(self):
+    def prepare_logger(self):
         self.logger = logger.setup_logger(self.module_name,
                                           self.script_name,
                                           self.cnfg.logging.loglevel,
                                           self.cnfg.logging.rotation_timing,
                                           self.cnfg.logging.backupcount)
+
+    def setup_resource(self):
+        pass
 
     def setup_application(self):
         pass
@@ -135,31 +142,56 @@ class BaseSetup(object):
     def run(self, **args):
         pass
 
+    def teardown_application(self):
+        pass
+
     def teardown_resource(self):
         pass
 
     def start(self, **args):
-        retcode = 0
+        retcode = BaseSetup.RET_NORMAL_END
         try:
-            self.logger.info("application started")
-            self.logger.info("application setup started")
+            self.logger.info("start as application")
+
+            self.logger.info("start setup resource")
+            self.setup_resource()
+            self.logger.info("end setup resource")
+
+            self.logger.info("start application setup")
             self.setup_application()
-            self.logger.info("application setup ended")
-            self.logger.info("main routine started")
+            self.logger.info("end application setup")
+
+            self.logger.info("start main routine")
             result = self.run(**args)
-            self.logger.info("main routine ended")
-            self.logger.info("application ended without unexpected error")
+            self.logger.info("end main routine")
+
+            self.logger.info("end application without unexpected error")
             if (type(result) is int):
                 retcode = result
         except KeyboardInterrupt:
             self.logger.warn("keyboard interrupted")
-            retcode = 1
+            retcode = BaseSetup.RET_KEY_INTERRUPTED_END
         except Exception as ex:
             self.logger.error("unexpected exception <%s> occurred" % (str(ex)))
             self.logger.error(traceback.format_exc())
-            retcode = 2
+            retcode = BaseSetup.RET_ABNORMAL_END
         finally:
-            self.teardown_resource()
+            self.logger.info("start cleanup")
+            try:
+                self.logger.info("start teardown application")
+                self.teardown_application()
+                self.logger.info("end teardown application")
+            except Exception as ex:
+                self.logger.warning("unexpected exception <%s> occurred" %
+                                    str(ex))
+            try:
+                self.logger.info("start teardown resource")
+                self.teardown_resource()
+                self.logger.info("end teardown resource")
+            except Exception as ex:
+                self.logger.warning("unexpected exception <%s> occurred" %
+                                    str(ex))
+            self.logger.info("end cleanup")
 
         sys.exit(retcode)
 
@@ -168,10 +200,8 @@ class SetupwithMySQLdb(BaseSetup):
 
     def __init__(self, module_name, script_name):
         super().__init__(module_name, script_name)
-        self.setup_engine()
-        self.setup_session()
 
-    def setup_engine(self):
+    def setup_resource(self):
         database_specifier = 'mysql://%s:%s@%s/%s?charset=utf8' % (
             self.cnfg.database.user,
             self.cnfg.database.passwd,
@@ -182,26 +212,21 @@ class SetupwithMySQLdb(BaseSetup):
                                       encoding="utf-8",
                                       echo=False)
 
-    def setup_session(self):
         session = scoped_session(sessionmaker(autocommit=False,
                                               autoflush=False,
                                               bind=self.dbengine))
         self.session = session
 
     def teardown_resource(self):
-        try:
-            self.session.close()
-        except Exception:
-            pass
+        self.session.close()
 
 
 class SetupwithInfluxdb(BaseSetup):
 
     def __init__(self, module_name, script_name):
         super().__init__(module_name, script_name)
-        self.setup_session()
 
-    def setup_session(self):
+    def setup_resource(self):
         host = self.cnfg.data_store.host
         port = self.cnfg.data_store.port
         ssl = self.cnfg.data_store.ssl
@@ -217,7 +242,4 @@ class SetupwithInfluxdb(BaseSetup):
                                       ssl=ssl)
 
     def teardown_resource(self):
-        try:
-            self.session.close()
-        except Exception:
-            pass
+        self.session.close()
