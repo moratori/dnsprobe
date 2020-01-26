@@ -5,3 +5,5 @@ logs/*.log.*
 static/data/*.json
 Pipfile.lock
 conf/test_*
+test/.coverage
+test/htmlcov
