@@ -4,17 +4,17 @@
 docstring is here
 """
 
-import common.common.config as config
-import common.common.framework as framework
-import common.data.dao as dao
-import logic.viewer.rttviewer as rttviewerlogic
-import dash_html_components as html
-import dash_core_components as doc
-
 import traceback
 import os
 import sys
 import dash
+import dash_html_components as html
+import dash_core_components as doc
+
+import src.common.common.config as config
+import src.common.common.framework as framework
+import src.common.data.dao as dao
+import src.logic.viewer.rttviewer as rttviewerlogic
 
 
 SLV = None

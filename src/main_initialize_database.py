@@ -4,11 +4,11 @@
 テーブルを定義する
 """
 
-import common.common.framework as framework
-import common.data.dao as dao
-
 import traceback
 import sys
+
+import src.common.common.framework as framework
+import src.common.data.dao as dao
 
 
 class InitializeDatabase(framework.SetupwithMySQLdb):

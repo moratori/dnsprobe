@@ -4,20 +4,20 @@
 docstring is here
 """
 
-import common.common.config as config
 import plotly.graph_objs as go
 import html as snt
-
 import os
 import datetime
 import math
-
 import dash_html_components as html
 import dash_core_components as doc
+
 from dash.dependencies import Input, Output
 from flask import abort, Response
 from logging import getLogger
 from werkzeug.routing import BaseConverter
+
+import src.common.common.config as config
 
 
 LOGGER = getLogger(__name__)

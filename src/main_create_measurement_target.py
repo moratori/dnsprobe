@@ -4,15 +4,16 @@
 docstring is here
 """
 
-import common.common.config as config
-import common.common.framework as framework
-import common.data.types as types
-import common.data.dao as dao
-import common.net.resolver.rec_resolver as rec_resolver
 import traceback
 import os
 import sys
 import json
+
+import src.common.common.config as config
+import src.common.common.framework as framework
+import src.common.data.types as types
+import src.common.data.dao as dao
+import src.common.net.resolver.rec_resolver as rec_resolver
 
 
 class CreateMeasurementTarget(framework.SetupwithMySQLdb):

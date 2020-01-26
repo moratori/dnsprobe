@@ -4,14 +4,15 @@
 docstring is here
 """
 
-import common.common.config as config
-import common.common.framework as framework
-import common.data.dao as dao
 import traceback
 import sys
 import os
 import flask
 from flask import render_template
+
+import src.common.common.config as config
+import src.common.common.framework as framework
+import src.common.data.dao as dao
 
 
 MC = None
