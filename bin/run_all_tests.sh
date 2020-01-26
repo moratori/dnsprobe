@@ -16,10 +16,13 @@ cd ${TESTS}
 
 pipenv run ${COVERAGE} erase
 
-pipenv run find . -type f -name "test_*.py" -exec ${COVERAGE} run -a {} \;
+pipenv run find . \
+        -type f \
+        -name 'test_*.py' \
+        -exec ${COVERAGE} run -a --omit ${VENV}/'*' {} \;
 
-pipenv run ${COVERAGE} report
-pipenv run ${COVERAGE} html
+pipenv run ${COVERAGE} report --omit ${VENV}/'*'
+pipenv run ${COVERAGE} html --omit ${VENV}/'*'
 
 exit 0
 
