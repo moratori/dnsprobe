@@ -36,18 +36,18 @@ class Measurer(framework.SetupwithInfluxdb):
     def __init__(self):
         super().__init__(__name__, __file__)
 
-    def __set_measurer_id(self):
+    def set_measurer_id(self):
         hostname = socket.gethostname()
         self.measurer_id = "%s-%d" % (
             self.cnfs.measurement.region,
             binascii.crc32(hostname.encode("utf8")))
 
-    def __set_server_boottime(self):
+    def set_server_boottime(self):
         current_time = datetime.datetime.utcnow()
         delta = datetime.timedelta(seconds=uptime.uptime())
         self.server_boottime = str((current_time - delta).isoformat()) + "Z"
 
-    def __set_global_ipaddress(self):
+    def set_global_ipaddress(self):
         selected_ipv4 = None
         selected_ipv6 = None
 
@@ -88,12 +88,12 @@ class Measurer(framework.SetupwithInfluxdb):
         self.ipv4 = selected_ipv4
         self.ipv6 = selected_ipv6
 
-    def __validate_id(self):
+    def validate_id(self):
         if self.ipv4 is None or self.ipv6 is None:
             self.logger.critical("measurer must have global IPv4/IPv6 address")
             raise errors.DNSProbeError("failed to validate ipaddress")
 
-    def __set_net_description(self):
+    def set_net_description(self):
 
         self.net_desc_v4 = None
         self.net_desc_v4 = None
@@ -131,7 +131,7 @@ class Measurer(framework.SetupwithInfluxdb):
         self.logger.info("IPv4 description: %s" % str(self.net_desc_v4))
         self.logger.info("IPv6 description: %s" % str(self.net_desc_v6))
 
-    def __load_measurement_info(self):
+    def load_measurement_info(self):
 
         protocol = self.cnfs.controller.protocol
         host = self.cnfs.controller.host
@@ -174,20 +174,20 @@ class Measurer(framework.SetupwithInfluxdb):
             self.logger.error("unable to map json obj to namedtuple")
             sys.exit(1)
 
-    def __measurement_core(self,
-                           current_time,
-                           nameserver,
-                           queryer,
-                           dst,
-                           src,
-                           af,
-                           asn,
-                           asn_desc,
-                           timeout,
-                           proto,
-                           qname,
-                           rrtype,
-                           qo):
+    def measurement_core(self,
+                         current_time,
+                         nameserver,
+                         queryer,
+                         dst,
+                         src,
+                         af,
+                         asn,
+                         asn_desc,
+                         timeout,
+                         proto,
+                         qname,
+                         rrtype,
+                         qo):
 
         response = None
         err = None
@@ -292,7 +292,7 @@ class Measurer(framework.SetupwithInfluxdb):
                     continue
 
                 async_results.append(
-                    threadpool.apply_async(self.__measurement_core,
+                    threadpool.apply_async(self.measurement_core,
                                            (current_time,
                                             nameserver,
                                             queryer,
@@ -316,12 +316,12 @@ class Measurer(framework.SetupwithInfluxdb):
         return result
 
     def setup_application(self):
-        self.__set_measurer_id()
-        self.__set_global_ipaddress()
-        self.__set_server_boottime()
-        self.__validate_id()
-        self.__set_net_description()
-        self.__load_measurement_info()
+        self.set_measurer_id()
+        self.set_global_ipaddress()
+        self.set_server_boottime()
+        self.validate_id()
+        self.set_net_description()
+        self.load_measurement_info()
         self.dao_dnsprobe = dao.Dnsprobe(self)
 
     def run(self):
