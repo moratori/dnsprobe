@@ -24,10 +24,10 @@ import dns.rdatatype
 import dns.exception
 from multiprocessing.pool import ThreadPool
 
-import src.common.common.framework as framework
-import src.common.data.dao as dao
-import src.common.data.types as types
-import src.common.data.errors as errors
+import common.common.framework as framework
+import common.data.dao as dao
+import common.data.types as types
+import common.data.errors as errors
 
 
 class Measurer(framework.SetupwithInfluxdb):

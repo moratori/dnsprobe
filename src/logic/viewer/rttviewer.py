@@ -17,7 +17,7 @@ from flask import abort, Response
 from logging import getLogger
 from werkzeug.routing import BaseConverter
 
-import src.common.common.config as config
+import common.common.config as config
 
 
 LOGGER = getLogger(__name__)

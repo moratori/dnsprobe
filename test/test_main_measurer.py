@@ -8,10 +8,10 @@ import re
 import sys
 import os
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
-import src.main_measurer_controller as controller
-import src.main_measurer as measurer
+import main_measurer_controller as controller
+import main_measurer as measurer
 
 
 class TestMainMeasurer(unittest.TestCase):

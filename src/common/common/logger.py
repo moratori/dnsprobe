@@ -10,7 +10,7 @@ from logging import StreamHandler, basicConfig, getLogger
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG
 from logging.handlers import TimedRotatingFileHandler
 
-import src.common.common.config as config
+import common.common.config as config
 
 
 def setup_logger(module_name, file_path, loglevel, rotation_timing, bkcount):

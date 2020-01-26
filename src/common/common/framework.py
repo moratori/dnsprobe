@@ -13,8 +13,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from influxdb import InfluxDBClient
 
-import src.common.common.logger as logger
-import src.common.common.config as config
+import common.common.logger as logger
+import common.common.config as config
 
 
 class BaseSetup(object):

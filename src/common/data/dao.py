@@ -7,7 +7,7 @@ from logging import getLogger
 from sqlalchemy import Column, Integer, String, Enum
 from sqlalchemy.ext.declarative import declarative_base
 
-import src.common.data.types as types
+import common.data.types as types
 
 LOGGER = getLogger(__name__)
 Base = declarative_base()
