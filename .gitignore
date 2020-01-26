@@ -4,3 +4,4 @@ logs/*.log
 logs/*.log.*
 static/data/*.json
 Pipfile.lock
+conf/test_*
