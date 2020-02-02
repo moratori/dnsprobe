@@ -1,3 +1,5 @@
+![coverage](coverage.svg)
+
 # dnsprobe; RTT monitor
 
 [https://dnssl.mtcq.jp/](https://dnssl.mtcq.jp/)
