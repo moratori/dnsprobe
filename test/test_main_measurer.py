@@ -5,11 +5,9 @@ import ipaddress
 import re
 import sys
 import os
-import time
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
-import main_measurer_controller as controller
 import main_measurer as measurer
 import common.data.errors as errors
 
@@ -50,3 +48,13 @@ class TestMainMeasurer(unittest.TestCase):
         if self.measurer.ipv4 is None or self.measurer.ipv6 is None:
             self.assertRaises(errors.DNSProbeError,
                               self.measurer.validate_id)
+
+    def test_4_set_net_description(self):
+        self.measurer.set_global_ipaddress()
+        self.measurer.set_net_description()
+        v4_asn, v4_desc = self.measurer.net_desc_v4
+        v6_asn, v6_desc = self.measurer.net_desc_v6
+        self.assertIsInstance(v4_asn, str)
+        self.assertIsInstance(v4_desc, str)
+        self.assertIsInstance(v6_asn, str)
+        self.assertIsInstance(v6_desc, str)
