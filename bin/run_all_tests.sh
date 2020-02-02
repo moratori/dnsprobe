@@ -22,7 +22,7 @@ pipenv run ${COVERAGE} run -a --omit ${VENV}/'*' -m unittest discover
 pipenv run ${COVERAGE} report --omit ${VENV}/'*'
 pipenv run ${COVERAGE} html --omit ${VENV}/'*'
 
-pipenv run ${COVERAGE_BADGE} -o ${PROJECT_ROOT}/coverage.svg
+pipenv run ${COVERAGE_BADGE} -fo ${PROJECT_ROOT}/coverage.svg
 
 exit 0
 
