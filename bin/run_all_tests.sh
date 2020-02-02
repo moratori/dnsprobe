@@ -9,6 +9,7 @@ BIN="${PROJECT_ROOT}/bin"
 
 SELF="`basename $0`"
 COVERAGE="coverage"
+COVERAGE_BADGE="coverage-badge"
 #######################################
 
 cd ${PROJECT_ROOT}
@@ -20,6 +21,8 @@ pipenv run ${COVERAGE} run -a --omit ${VENV}/'*' -m unittest discover
 
 pipenv run ${COVERAGE} report --omit ${VENV}/'*'
 pipenv run ${COVERAGE} html --omit ${VENV}/'*'
+
+pipenv run ${COVERAGE_BADGE} -o ${PROJECT_ROOT}/coverage.svg
 
 exit 0
 
