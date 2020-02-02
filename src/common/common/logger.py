@@ -45,7 +45,9 @@ def setup_logger(module_name, file_path, loglevel, rotation_timing, bkcount):
         handler = TimedRotatingFileHandler(
             filename=os.path.join(config.LOGS_DIR, log_file_name),
             when=rotation_timing,
-            backupCount=int(bkcount))
+            backupCount=int(bkcount),
+            encoding="utf8",
+            delay=True)
 
     fmt_str = "%(asctime)s [%(levelname)s] %(name)s %(funcName)s %(message)s"
     basicConfig(format=fmt_str, level=loglevel, handlers=[handler])
