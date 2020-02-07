@@ -192,7 +192,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
         self.set_layout()
         self.logic.setup_logic()
 
-    def run(self):
+    def run_application(self):
         self.application.run_server(debug=self.cnfs.server.debug,
                                     host=self.cnfs.server.host,
                                     port=self.cnfs.server.port)

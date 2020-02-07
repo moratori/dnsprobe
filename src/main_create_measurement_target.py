@@ -21,7 +21,7 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
     def __init__(self):
         super().__init__(__name__, __file__)
 
-    def run(self):
+    def run_application(self):
         measurement_infos = self.retrieve_measurement_info()
         fullresolvers = [self.cnfs.nameserver.primary,
                          self.cnfs.nameserver.secondary]

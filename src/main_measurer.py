@@ -323,7 +323,7 @@ class Measurer(framework.SetupwithInfluxdb):
         self.load_measurement_info()
         self.dao_dnsprobe = dao.Dnsprobe(self)
 
-    def run(self):
+    def run_application(self):
         result = self.measure_toplevel()
         ret = self.dao_dnsprobe.write_measurement_data(result)
         if not ret:

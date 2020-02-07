@@ -16,7 +16,7 @@ class InitializeDatabase(framework.SetupwithMySQLdb):
     def __init__(self):
         super().__init__(__name__, __file__)
 
-    def run(self, **args):
+    def run_application(self, **args):
         dao.Base.metadata.create_all(bind=self.dbengine)
 
 

@@ -56,7 +56,7 @@ class MeasurerController(framework.SetupwithMySQLdb):
                                  "edit_measurement_target",
                                  self.edit_measurement_target)
 
-    def run(self):
+    def run_application(self):
         self.server.run(host=self.cnfs.server.host,
                         port=self.cnfs.server.port)
 

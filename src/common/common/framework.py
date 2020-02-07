@@ -149,7 +149,7 @@ class BaseSetup(object):
     def setup_application(self):
         pass
 
-    def run(self, **args):
+    def run_application(self, **args):
         pass
 
     def teardown_application(self):
@@ -172,7 +172,7 @@ class BaseSetup(object):
             self.logger.info("end application setup")
 
             self.logger.info("start main routine")
-            result = self.run(**args)
+            result = self.run_application(**args)
             self.logger.info("end main routine")
 
             self.logger.info("end application without unexpected error")
