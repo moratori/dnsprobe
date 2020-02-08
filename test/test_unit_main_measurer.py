@@ -5,10 +5,13 @@ import ipaddress
 import re
 import sys
 import os
+import multiprocessing as mp
+import time
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
 import main_measurer as measurer
+import main_measurer_controller as mc
 import common.data.errors as errors
 
 
@@ -58,3 +61,15 @@ class TestMainMeasurer(unittest.TestCase):
         self.assertIsInstance(v4_desc, str)
         self.assertIsInstance(v6_asn, str)
         self.assertIsInstance(v6_desc, str)
+
+    def test_5_load_measurement_info(self):
+        proc = mp.Process(target=mc.nakedserver)
+
+        proc.start()
+        time.sleep(4)
+
+        self.measurer.load_measurement_info()
+        self.assertTrue(hasattr(self.measurer, "measurement_info"))
+        self.assertTrue(len(self.measurer.measurement_info) >= 0)
+
+        proc.terminate()
