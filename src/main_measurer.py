@@ -149,21 +149,21 @@ class Measurer(framework.SetupwithInfluxdb):
                                     timeout=timeout)
         except requests.RequestException as ex:
             self.logger.error("unexpected error occurred: %s" % (str(ex)))
-            sys.exit(1)
+            raise errors.DNSProbeError("unable to get measurement info")
 
         self.logger.info("http status code: %s" % (response.status_code))
 
         if response.status_code != 200:
             self.logger.error("status code is not 200: %s" %
                               (response.status_code))
-            sys.exit(1)
+            raise errors.DNSProbeError("unable to get measurement info")
 
         try:
             json_obj = json.loads(response.text)
             self.logger.info("json object load in properly from controller")
         except json.decoder.JSONDecodeError as ex:
             self.logger.error("undecodable object responsed: %s" % (str(ex)))
-            sys.exit(1)
+            raise errors.DNSProbeError("unable to get measurement info")
 
         self.logger.debug(json_obj)
 
@@ -171,7 +171,7 @@ class Measurer(framework.SetupwithInfluxdb):
             self.measurement_info = namedtupled.map(json_obj)
         except Exception:
             self.logger.error("unable to map json obj to namedtuple")
-            sys.exit(1)
+            raise errors.DNSProbeError("unable to get measurement info")
 
     def measurement_core(self,
                          current_time,
@@ -263,7 +263,7 @@ class Measurer(framework.SetupwithInfluxdb):
                     asn, asn_desc = self.net_desc_v6
                 else:
                     self.logger.error("unknown version addr: %s" % str(addr))
-                    sys.exit(1)
+                    continue
 
                 queryer, timeout = queryer_info_by_protocol[protocol]
 
