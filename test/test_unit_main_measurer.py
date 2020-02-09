@@ -22,9 +22,10 @@ class TestMainMeasurer(unittest.TestCase):
 
     def setUp(self):
         self.measurer = measurer.Measurer()
+        self.measurer.setup_resource()
 
     def tearDown(self):
-        pass
+        self.measurer.teardown_resource()
 
     def test_0_set_measurer_id(self):
         id_pattern = re.compile("^[a-z][a-z][a-z]\-[0-9]+$")
