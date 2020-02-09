@@ -30,3 +30,7 @@ class TestMainMeasurerController(unittest.TestCase):
         ret = self.client.get("/edit/measurement_target")
         self.assertTrue(ret)
 
+    def test_2_static_data_measurement_info(self):
+        ret = self.client.get("/static/data/measurement_info.json")
+        self.assertTrue(ret)
+
