@@ -331,8 +331,7 @@ class Measurer(framework.SetupwithInfluxdb):
         return 0
 
 
-if __name__ == "__main__":
-
+def main():
     try:
         measurer = Measurer()
     except Exception:
@@ -342,3 +341,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     measurer.start()
+
+
+if __name__ == "__main__":
+    main()

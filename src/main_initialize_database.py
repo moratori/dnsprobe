@@ -20,8 +20,7 @@ class InitializeDatabase(framework.SetupwithMySQLdb):
         dao.Base.metadata.create_all(bind=self.dbengine)
 
 
-if __name__ == "__main__":
-
+def main():
     try:
         initdb = InitializeDatabase()
     except Exception:
@@ -29,3 +28,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     initdb.start()
+
+
+if __name__ == "__main__":
+    main()

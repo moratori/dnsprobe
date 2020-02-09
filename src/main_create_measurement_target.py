@@ -92,8 +92,7 @@ class CreateMeasurementTarget(framework.SetupwithMySQLdb):
         return
 
 
-if __name__ == "__main__":
-
+def main():
     try:
         cmt = CreateMeasurementTarget()
     except Exception:
@@ -101,3 +100,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     cmt.start()
+
+
+if __name__ == "__main__":
+    main()
