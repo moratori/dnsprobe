@@ -3,6 +3,7 @@
 import unittest
 import sys
 import os
+import datetime
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
@@ -48,4 +49,20 @@ class TestCommonDataDao(unittest.TestCase,
         for (label, probe_id) in self.dao.make_probe_group():
             self.assertTrue(self.dao.get_probe_net_desc(probe_id))
 
+    def test_7_get_af_proto_combination(self):
+        self.assertTrue(self.dao.get_af_proto_combination("a.dns.jp",
+                                                          ["sjc-3640367842",
+                                                           "tyo-3583024419"]
+                                                          ))
 
+    def test_8_get_percentile_data(self):
+        current_time = datetime.datetime.utcnow()
+        start_time = current_time - datetime.timedelta(seconds=3600*5)
+        end_time = current_time
+
+        self.assertTrue(self.dao.get_percentilegraph_data(
+            "a.dns.jp",
+            ["sjc-3640367842" , "tyo-3583024419"],
+            "SOA",
+            start_time.isoformat() + "Z",
+            end_time.isoformat() + "Z"))

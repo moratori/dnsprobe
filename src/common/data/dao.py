@@ -59,6 +59,12 @@ class Dnsprobe:
                 result.append(record["value"])
         return result
 
+    def __make_multiple_or_condition(self, keyname, values):
+        # keyname,values parameter MUST BE TRUSTED value
+        condition = " or ".join(["%s = '%s'" % (keyname, value)
+                                 for value in values])
+        return condition
+
     def make_authoritative_group(self):
         ret = self.__show_tag_list("dst_name")
         result = [dict(label=each, value=each) for each in ret]
@@ -190,7 +196,8 @@ class Dnsprobe:
 
         return v4_asn, v4_desc, v6_asn, v6_desc
 
-    def get_af_proto_combination(self, dns_server_name, probe_name):
+    # deprecated
+    def __get_af_proto_combination_core(self, dns_server_name, probe_name):
 
         proc_start = time.time()
 
@@ -220,24 +227,34 @@ class Dnsprobe:
 
         return result
 
-    def get_rttgraph_data(self, dns_server_name, probe_name, af, proto, rrtype,
-                          start_time, end_time):
+    # deprecated
+    def get_af_proto_combination(self, dns_server_name, probe_names):
+        ret = []
+        for probe_name in probe_names:
+            ret.extend(self.__get_af_proto_combination_core(dns_server_name,
+                                                            probe_name))
+        return list(set(ret))
+
+    def get_rttgraph_data(self, dns_server_name, probe_names, af, proto,
+                          rrtype, start_time, end_time):
 
         proc_start = time.time()
+        prb_id_condition = self.__make_multiple_or_condition("prb_id",
+                                                             probe_names)
 
         ret = self.app.session.query(
-            "select time,time_took from dnsprobe where \
+            "select mean(time_took) as averaged_time_took from dnsprobe where \
              dst_name = $dst_name and \
-             prb_id = $prb_id and \
              got_response = 'True' and \
              af = $af and \
              proto = $proto and \
              rrtype = $rrtype and \
              $start_time < time and \
-             time < $end_time",
+             time < $end_time and \
+             (%s) \
+             group by time(1m)" % prb_id_condition,
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
-                     prb_id=probe_name,
                      af=af,
                      proto=proto,
                      rrtype=rrtype,
@@ -251,28 +268,29 @@ class Dnsprobe:
         for records in ret:
             for data in records:
                 x.append(data["time"])
-                y.append(data["time_took"])
+                y.append(data["averaged_time_took"])
 
         return x, y
 
-    def get_nsidgraph_data(self, dns_server_name, probe_name, rrtype,
+    def get_nsidgraph_data(self, dns_server_name, probe_names, rrtype,
                            start_time, end_time):
 
         proc_start = time.time()
+        prb_id_condition = self.__make_multiple_or_condition("prb_id",
+                                                             probe_names)
 
         ret = self.app.session.query(
             "select count(time_took) \
              from dnsprobe where \
              got_response = 'True' and \
              dst_name = $dst_name and \
-             prb_id = $prb_id and \
              rrtype = $rrtype and \
              $start_time < time and \
-             time < $end_time \
-            group by nsid",
+             time < $end_time and\
+             (%s) \
+            group by nsid" % prb_id_condition,
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
-                     prb_id=probe_name,
                      rrtype=rrtype,
                      start_time=start_time,
                      end_time=end_time))))
@@ -281,24 +299,26 @@ class Dnsprobe:
 
         return ret
 
-    def get_ratiograph_unanswered(self, dns_server_name, probe_name, af, proto,
-                                  rrtype, start_time, end_time):
+    def get_ratiograph_unanswered(self, dns_server_name, probe_names, af,
+                                  proto, rrtype, start_time, end_time):
 
         proc_start = time.time()
+
+        prb_id_condition = self.__make_multiple_or_condition("prb_id",
+                                                             probe_names)
 
         unanswered = self.app.session.query(
             "select count(time_took) from dnsprobe where \
              got_response = 'False' and \
              dst_name = $dst_name and \
-             prb_id = $prb_id and \
              af = $af and \
              proto = $proto and \
              rrtype = $rrtype and \
              $start_time < time and \
-             time < $end_time",
+             time < $end_time and \
+             (%s)" % prb_id_condition,
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
-                     prb_id=probe_name,
                      af=af,
                      proto=proto,
                      rrtype=rrtype,
@@ -309,24 +329,25 @@ class Dnsprobe:
 
         return unanswered
 
-    def get_ratiograph_answered(self, dns_server_name, probe_name, af, proto,
+    def get_ratiograph_answered(self, dns_server_name, probe_names, af, proto,
                                 rrtype, start_time, end_time):
 
         proc_start = time.time()
+        prb_id_condition = self.__make_multiple_or_condition("prb_id",
+                                                             probe_names)
 
         answered = self.app.session.query(
             "select count(time_took) from dnsprobe where \
              got_response = 'True' and \
              dst_name = $dst_name and \
-             prb_id = $prb_id and \
              af = $af and \
              proto = $proto and \
              rrtype = $rrtype and \
              $start_time < time and \
-             time < $end_time",
+             time < $end_time and \
+             (%s)" % prb_id_condition,
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
-                     prb_id=probe_name,
                      af=af,
                      proto=proto,
                      rrtype=rrtype,
@@ -337,7 +358,7 @@ class Dnsprobe:
 
         return answered
 
-    def get_percentilegraph_data(self, dns_server_name, probe_name, rrtype,
+    def get_percentilegraph_data(self, dns_server_name, probe_names, rrtype,
                                  start_time, end_time):
 
         default_step = 20
@@ -348,6 +369,8 @@ class Dnsprobe:
 
         proc_start = time.time()
         result = {}
+        prb_id_condition = self.__make_multiple_or_condition("prb_id",
+                                                             probe_names)
 
         for each_step in range(0, 100+1, xaxis_step):
 
@@ -360,12 +383,11 @@ class Dnsprobe:
                  time < $end_time and \
                  dst_name = $dst_name and \
                  rrtype = $rrtype and \
-                 prb_id = $prb_id \
-                 group by af, proto",
+                 (%s) \
+                 group by af, proto" % (prb_id_condition),
                 params=dict(params=json.dumps(
                     dict(each_step=each_step,
                          dst_name=dns_server_name,
-                         prb_id=probe_name,
                          rrtype=rrtype,
                          start_time=start_time,
                          end_time=end_time))))

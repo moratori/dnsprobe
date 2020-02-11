@@ -9,6 +9,7 @@ import html as snt
 import os
 import datetime
 import math
+import re
 import dash_html_components as html
 import dash_core_components as doc
 
@@ -34,7 +35,7 @@ class RTTViewerLogic():
     def __init__(self, rttviewer):
         self.rttviewer = rttviewer
 
-    def __convert_range_index_to_time(self, time_range):
+    def convert_range_index_to_time(self, time_range):
 
         upper = 24
         seconds_for_hour = 3600
@@ -47,6 +48,38 @@ class RTTViewerLogic():
             seconds=(upper - end_index) * seconds_for_hour)
 
         return start_time.isoformat() + "Z", end_time.isoformat() + "Z"
+
+    def check_time_range(self, time_range):
+        return (time_range is not None and
+                type(time_range) is list and
+                len(time_range) == 2 and
+                type(time_range[0]) is int and
+                type(time_range[1]) is int)
+
+    def check_dns_server_names(self, dns_server_names):
+        if dns_server_names is None or not dns_server_names:
+            return False
+        pat = re.compile("^[A-Za-z0-9\.\-]+$")
+        for each in dns_server_names:
+            if not pat.findall(each):
+                return False
+        return True
+
+    def check_probe_names(self, probe_names):
+        if probe_names is None or not probe_names:
+            return False
+        pat = re.compile("^[a-z0-9\-]+$")
+        for each in probe_names:
+            if not pat.findall(each):
+                return False
+        return True
+
+    def check_rrtype(self, rrtype):
+        if rrtype is None:
+            return False
+        if re.compile("^[a-zA-Z]+$").findall(rrtype):
+            return True
+        return False
 
     def setup_logic(self):
 
@@ -77,9 +110,16 @@ class RTTViewerLogic():
              Input("main-content-menu-filter_probe", "value"),
              Input("main-content-menu-filter_rrtype", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_graph(time_range, dns_server_names, probe_name, rrtype, cnt):
+        def update_graph(time_range, dns_server_names, probe_names, rrtype, cnt):
 
             result = []
+
+            if not (self.check_time_range(time_range) and
+                    self.check_dns_server_names(dns_server_names) and
+                    self.check_probe_names(probe_names) and
+                    self.check_rrtype(rrtype)):
+                LOGGER.warning("lack of argument for rendering graph")
+                return result
 
             for dns_server_name in reversed(dns_server_names):
 
@@ -87,7 +127,7 @@ class RTTViewerLogic():
                     html.Div([
                         doc.Graph(figure=__update_rttgraph(time_range,
                                                            dns_server_name,
-                                                           probe_name,
+                                                           probe_names,
                                                            rrtype),
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
@@ -97,7 +137,7 @@ class RTTViewerLogic():
                     html.Div([
                         doc.Graph(figure=__update_ratiograph(time_range,
                                                              dns_server_name,
-                                                             probe_name,
+                                                             probe_names,
                                                              rrtype),
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
@@ -107,7 +147,7 @@ class RTTViewerLogic():
                     html.Div([
                         doc.Graph(figure=__update_nsidgraph(time_range,
                                                             dns_server_name,
-                                                            probe_name,
+                                                            probe_names,
                                                             rrtype),
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
@@ -118,7 +158,7 @@ class RTTViewerLogic():
                         doc.Graph(figure=__update_percentilegraph(
                             time_range,
                             dns_server_name,
-                            probe_name,
+                            probe_names,
                             rrtype),
                                   style=dict(height=350),
                                   config=dict(displayModeBar=False))],
@@ -132,16 +172,8 @@ class RTTViewerLogic():
         def __update_percentilegraph(time_range, dns_server_name, probe_name,
                                      rrtype):
 
-            if (time_range is None) or \
-                    (dns_server_name is None) or \
-                    (probe_name is None) or \
-                    (rrtype is None) or \
-                    not time_range:
-                LOGGER.warning("lack of argument for update_percentilegraph")
-                return dict()
-
             start_time, end_time = \
-                self.__convert_range_index_to_time(time_range)
+                self.convert_range_index_to_time(time_range)
 
             ret = self.rttviewer.dao_dnsprobe.get_percentilegraph_data(
                 dns_server_name,
@@ -189,16 +221,8 @@ class RTTViewerLogic():
         def __update_nsidgraph(time_range, dns_server_name, probe_name,
                                rrtype):
 
-            if (time_range is None) or \
-                    (dns_server_name is None) or \
-                    (probe_name is None) or \
-                    (rrtype is None) or \
-                    not time_range:
-                LOGGER.warning("lack of argument for update_ratiograph")
-                return dict()
-
             start_time, end_time = \
-                self.__convert_range_index_to_time(time_range)
+                self.convert_range_index_to_time(time_range)
 
             ret = self.rttviewer.dao_dnsprobe.get_nsidgraph_data(
                 dns_server_name,
@@ -209,8 +233,7 @@ class RTTViewerLogic():
 
             values = []
             labels = []
-            title = "NSID Ratio(%s from %s)" % (dns_server_name,
-                                                probe_name)
+            title = "NSID Ratio(%s from selected probes)" % (dns_server_name)
             legend_max_num = 4
 
             for (measurement_name, tags) in ret.keys():
@@ -249,16 +272,8 @@ class RTTViewerLogic():
         def __update_ratiograph(time_range, dns_server_name, probe_name,
                                 rrtype):
 
-            if (time_range is None) or \
-                    (dns_server_name is None) or \
-                    (probe_name is None) or \
-                    (rrtype is None) or \
-                    not time_range:
-                LOGGER.warning("lack of argument for update_ratiograph")
-                return dict()
-
             start_time, end_time = \
-                self.__convert_range_index_to_time(time_range)
+                self.convert_range_index_to_time(time_range)
 
             af_proto_combination = \
                 self.rttviewer.dao_dnsprobe.get_af_proto_combination(
@@ -268,8 +283,8 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "Answered Ratio(%s from %s)" % (dns_server_name,
-                                                    probe_name)
+            title = "Answered Ratio(%s from selected probes)" % (
+                dns_server_name)
             labels = ["Unanswered", "Answered"]
             donut_size = 0.3
             hoverinfo = "label+percent+name"
@@ -344,14 +359,6 @@ class RTTViewerLogic():
 
         def __update_rttgraph(time_range, dns_server_name, probe_name, rrtype):
 
-            if (time_range is None) or \
-                    (dns_server_name is None) or \
-                    (probe_name is None) or \
-                    (rrtype is None) or \
-                    not time_range:
-                LOGGER.warning("lack of argument for update_rttgraph")
-                return dict()
-
             LOGGER.debug("time range: %s" % time_range)
             LOGGER.debug("dns server name: %s" % dns_server_name)
             LOGGER.debug("probe name: %s" % probe_name)
@@ -359,11 +366,11 @@ class RTTViewerLogic():
             if not dns_server_name:
                 return dict()
 
-            title = "RTT Performance(%s from %s)" % (dns_server_name,
-                                                     probe_name)
+            title = "RTT Performance(%s from selected probes)" % (
+                dns_server_name)
 
             start_time, end_time = \
-                self.__convert_range_index_to_time(time_range)
+                self.convert_range_index_to_time(time_range)
 
             af_proto_combination = \
                 self.rttviewer.dao_dnsprobe.get_af_proto_combination(
@@ -417,7 +424,7 @@ class RTTViewerLogic():
             Output("main-content-map-figure", "figure"),
             [Input("main-content-menu-filter_probe", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_map(probe_name, cnt):
+        def update_map(probe_names, cnt):
 
             map_height = 850
             map_scale = 1.1
@@ -442,8 +449,8 @@ class RTTViewerLogic():
                                            latitudes,
                                            longitudes):
 
-                color = color_map[probe_name == locname]
-                size = size_map[probe_name == locname]
+                color = color_map[locname in probe_names]
+                size = size_map[locname in probe_names]
 
                 last_measured = \
                     self.rttviewer.dao_dnsprobe.get_probe_last_measured(
