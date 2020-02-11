@@ -7,4 +7,4 @@ Pipfile.lock
 conf/test_*
 test/.coverage
 test/htmlcov
-test/sync_real_data_to_local.sh
+bin/sync_real_data_to_local.sh
