@@ -1,4 +1,10 @@
 #!/bin/bash
 
-rm -r /tmp/dnsprobe-influxdb-dump-* > /dev/null 2>&1
-/usr/bin/influxd backup -portable -database dnsprobe -host 127.0.0.1:8088 "/tmp/dnsprobe-influxdb-dump-`date +"%Y%m%d"`" > /dev/null 2>&1
+basename="/tmp/dnsprobe-influxdb-dump"
+bkdirname="${basename}-`date +"%Y%m%d"`"
+
+rm -r ${basename}-* > /dev/null 2>&1
+/usr/bin/influxd backup -portable -database dnsprobe -host 127.0.0.1:8088 ${bkdirname} > /dev/null 2>&1
+
+chmod 755 "${bkdirname}"
+chmod 666 ${bkdirname}/*
