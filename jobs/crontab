@@ -2,3 +2,4 @@
 # min hour day month dow command
 */1 * * * * /path/to/dnsprobe/bin/run_main_measurer.sh
 0 */3 * * * /path/to/dnsprobe/bin/run_main_create_measurement_target.sh
+0 */1 * * * /path/to/dnsprobe/bin/run_dump_influxdb.sh
