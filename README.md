@@ -2,12 +2,12 @@
 
 # dnsprobe; RTT monitor
 
-[https://rtt.dns.mtcq.jp/](https://dnssl.mtcq.jp/)
+[https://rtt.dns.mtcq.jp/](https://rtt.dns.mtcq.jp/)
 
 ![sample graph](graph.jpg)
 
 
-[https://soa.dns.mtcq.jp/](https://dnssl.mtcq.jp/)
+[https://soa.dns.mtcq.jp/](https://soa.dns.mtcq.jp/)
 
 ![sample soa](soa.jpg)
 
