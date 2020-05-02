@@ -5,7 +5,6 @@ docstring is here
 """
 
 import os
-import datetime
 
 from dash.dependencies import Input, Output
 from flask import abort, Response
