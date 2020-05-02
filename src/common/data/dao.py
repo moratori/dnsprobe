@@ -2,6 +2,7 @@
 
 import json
 import time
+import datetime
 
 from logging import getLogger
 from sqlalchemy import Column, Integer, String, Enum
@@ -411,6 +412,103 @@ class Dnsprobe:
                     result[key][1].append(each_step)
                 else:
                     result[key] = ([value], [each_step])
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return result
+
+    def get_last_measured_soa_data(self, hours):
+
+
+        current_time = datetime.datetime.utcnow()
+        start_time = (current_time - datetime.timedelta(hours=hours)
+                      ).isoformat() + "Z"
+
+        result = []
+
+        proc_start = time.time()
+
+        maximum_soa_for_each_nameserver = self.app.session.query(
+            "select max(serial)\
+             from dnsprobe\
+             where got_response = 'True' and\
+             rrtype = 'SOA' and \
+             time > $start_time\
+             group by dst_name, af, proto, prb_id",
+            params=dict(params=json.dumps(
+                dict(start_time=start_time))))
+
+        for (measurement_name, tags) in maximum_soa_for_each_nameserver.keys():
+            record = list(maximum_soa_for_each_nameserver.get_points(
+                measurement=measurement_name,
+                tags=tags))
+
+            if not (("dst_name" in tags) and ("af" in tags) and
+                    ("proto" in tags) and ("prb_id" in tags) and
+                    (len(record) == 1) and ("max" in record[0]) and
+                    ("time" in record[0])):
+                LOGGER.warning(str(tags))
+                LOGGER.warning(str(record))
+                LOGGER.warning("unexpected influxdb scheme")
+                continue
+
+            dst_name = tags["dst_name"]
+            af = tags["af"]
+            proto = tags["proto"]
+            prb_id = tags["prb_id"]
+            current_maximum_serial = record[0]["max"]
+            last_measured_at = record[0]["time"]
+
+            first_measured = self.app.session.query(
+                "select first(serial)\
+                 from dnsprobe\
+                 where \
+                 got_response = 'True' and\
+                 rrtype = 'SOA' and\
+                 time > $start_time and\
+                 dst_name = $dst_name and\
+                 af = $af and\
+                 proto = $proto and \
+                 prb_id = $prb_id and\
+                 serial = $serial",
+                params=dict(params=json.dumps(
+                    dict(start_time=start_time,
+                         dst_name=dst_name,
+                         af=af,
+                         proto=proto,
+                         prb_id=prb_id,
+                         serial=current_maximum_serial))))
+
+            last_measured = self.app.session.query(
+                "select last(serial)\
+                 from dnsprobe\
+                 where \
+                 got_response = 'True' and\
+                 rrtype = 'SOA' and\
+                 time > $start_time and\
+                 dst_name = $dst_name and\
+                 af = $af and\
+                 proto = $proto and \
+                 prb_id = $prb_id and\
+                 serial = $serial",
+                params=dict(params=json.dumps(
+                    dict(start_time=start_time,
+                         dst_name=dst_name,
+                         af=af,
+                         proto=proto,
+                         prb_id=prb_id,
+                         serial=current_maximum_serial))))
+
+            last_measured_at = list(last_measured.get_points())[0]["time"]
+            first_measured_at = list(first_measured.get_points())[0]["time"]
+
+            result.append(dict(dst_name=dst_name,
+                               af=af,
+                               proto=proto,
+                               prb_id=prb_id,
+                               serial=current_maximum_serial,
+                               first_measured_at=first_measured_at,
+                               last_measured_at=last_measured_at))
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
