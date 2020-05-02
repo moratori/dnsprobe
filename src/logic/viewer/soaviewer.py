@@ -11,6 +11,7 @@ from flask import abort, Response
 from logging import getLogger
 from werkzeug.routing import BaseConverter
 
+import common.common.util as util
 import common.common.config as config
 
 LOGGER = getLogger(__name__)
@@ -59,6 +60,19 @@ class SOAViewerLogic():
             data = self.soaviewer.dao_dnsprobe.get_last_measured_soa_data(
                 hours)
 
+            result = []
+            for dic in data:
+                last_measured_at = \
+                    util.parse_influx_string_time_to_datetime(
+                        dic["last_measured_at"])
+                first_measured_at = \
+                    util.parse_influx_string_time_to_datetime(
+                        dic["first_measured_at"])
+
+                delta = (last_measured_at - first_measured_at).total_seconds()
+                dic["period"] = int(delta / 60)
+                result.append(dic)
+
             max_serial = max([each["serial"] for each in data])
 
             style = [
@@ -72,4 +86,4 @@ class SOAViewerLogic():
                  "color": "red",
                  "fontWeight": "bold"}]
 
-            return data, style
+            return result, style

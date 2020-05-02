@@ -11,7 +11,6 @@ import dash_table
 import dash_html_components as html
 import dash_core_components as doc
 
-import common.common.config as config
 import common.common.framework as framework
 import common.data.dao as dao
 import logic.viewer.soaviewer as soaviewerlogic
@@ -46,7 +45,8 @@ class SOAMonitor(framework.SetupwithInfluxdb):
                    dict(name="Probe", id="prb_id"),
                    dict(name="Serial value", id="serial"),
                    dict(name="First measured at(UTC)", id="first_measured_at"),
-                   dict(name="Last measured at(UTC)", id="last_measured_at")]
+                   dict(name="Last measured at(UTC)", id="last_measured_at"),
+                   dict(name="Period(min)", id="period")]
 
         soa_table = dash_table.DataTable(
             id="main-content-table",
