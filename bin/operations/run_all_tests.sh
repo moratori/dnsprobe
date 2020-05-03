@@ -2,17 +2,15 @@
 
 #######################################
 CURRENT=$(cd $(dirname $0) && pwd)
-PROJECT_ROOT="$(cd ${CURRENT%/}/.. && pwd)"
-BIN="${PROJECT_ROOT}/bin"
+PROJECT_ROOT="$(cd ${CURRENT%/}/../../ && pwd)"
 
-. ${BIN}/common.sh
+TESTS="${PROJECT_ROOT}/test"
+VENV="${PROJECT_ROOT}/.venv"
 
-SELF="`basename $0`"
 COVERAGE="coverage"
 COVERAGE_BADGE="coverage-badge"
 #######################################
 
-cd ${PROJECT_ROOT}
 cd ${TESTS}
 
 pipenv run ${COVERAGE} erase
