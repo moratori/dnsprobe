@@ -283,8 +283,11 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "Answered Ratio(%s from selected probes)" % (
-                dns_server_name)
+            title = "Answered Ratio(%s from selected probes)<br>timeout threshold: tcp(%.1fsec),udp(%.1fsec)" % (
+                dns_server_name,
+                self.rttviewer.cnfg.constants.tcp_timeout,
+                self.rttviewer.cnfg.constants.udp_timeout)
+
             labels = ["Unanswered", "Answered"]
             donut_size = 0.3
             hoverinfo = "label+percent+name"
