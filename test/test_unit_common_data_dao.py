@@ -60,9 +60,11 @@ class TestCommonDataDao(unittest.TestCase,
         start_time = current_time - datetime.timedelta(seconds=3600*5)
         end_time = current_time
 
-        self.assertTrue(self.dao.get_percentilegraph_data(
-            "a.dns.jp",
-            ["sjc-3640367842" , "tyo-3583024419"],
-            "SOA",
-            start_time.isoformat() + "Z",
-            end_time.isoformat() + "Z"))
+        self.assertTrue(isinstance(
+            self.dao.get_percentilegraph_data(
+                "a.dns.jp",
+                ["sjc-3640367842", "tyo-3583024419"],
+                "SOA",
+                start_time.isoformat() + "Z",
+                end_time.isoformat() + "Z"),
+            dict))
