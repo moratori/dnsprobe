@@ -233,8 +233,8 @@ class Measurer(framework.SetupwithInfluxdb):
 
     def measure_toplevel(self):
 
-        tcp_timeout = self.cnfs.measurement.tcp_timeout
-        udp_timeout = self.cnfs.measurement.udp_timeout
+        tcp_timeout = self.cnfg.constants.tcp_timeout
+        udp_timeout = self.cnfg.constants.udp_timeout
         current_time = str(datetime.datetime.utcnow().isoformat()) + "Z"
         result = []
 
