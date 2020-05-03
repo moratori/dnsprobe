@@ -61,6 +61,7 @@ class SOAViewerLogic():
                 hours)
 
             result = []
+            max_serial = -1
             for dic in data:
                 last_measured_at = \
                     util.parse_influx_string_time_to_datetime(
@@ -73,7 +74,9 @@ class SOAViewerLogic():
                 dic["period"] = int(delta / 60)
                 result.append(dic)
 
-            max_serial = max([each["serial"] for each in data])
+                serial = dic["serial"]
+                if serial > max_serial:
+                    max_serial = serial
 
             style = [
                 {"if": {
@@ -82,6 +85,11 @@ class SOAViewerLogic():
                  "color": "green"},
                 {"if": {
                     "column_id": "serial",
+                    "filter_query": "{serial} < %d" % max_serial},
+                 "color": "red",
+                 "fontWeight": "bold"},
+                {"if": {
+                    "column_id": "period",
                     "filter_query": "{serial} < %d" % max_serial},
                  "color": "red",
                  "fontWeight": "bold"}]
