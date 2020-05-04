@@ -15,7 +15,11 @@ AF = [4, 6]
 RRTYPE = ["SOA"]
 
 
-def generate(argument):
+def generate_time_took():
+    pass
+
+
+def generate_data(argument):
 
     end_time = datetime.datetime.now()
     start_time = \
@@ -39,4 +43,4 @@ if __name__ == "__main__":
     argparser.add_argument("--range-in-minutes", type=int, default=3)
     argparser.add_argument("--step-in-minutes", type=int, default=1)
 
-    generate(argparser.parse_args())
+    generate_data(argparser.parse_args())
