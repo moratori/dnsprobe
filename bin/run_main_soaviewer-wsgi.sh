@@ -21,5 +21,7 @@ pipenv run uwsgi \
         --manage-script-name \
         --chdir "${SOURCES}" \
         --mount "/=${script_name}:${wsgi_entry}" \
-        --chmod-socket=777 > /dev/null 2>&1 &
+        --chmod-socket=777 \
+        --logger file:logfile=${LOGS}/${SELF}.wsgi.log,maxsize=${WSGI_LOG_ROTATION_SIZE} \
+        > /dev/null 2>&1 &
 
