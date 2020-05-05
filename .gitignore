@@ -8,4 +8,5 @@ conf/test_*
 test/.coverage
 test/htmlcov
 test/data/data/
+test/data/write_test_data_to_influxdb.sh
 bin/operations/sync_real_data_to_local.sh
