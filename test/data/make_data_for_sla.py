@@ -41,11 +41,12 @@ def generate_data(argument):
                                   ["tcp", "udp"],
                                   probes):
 
-            got_response, time_took = generate_time_took(transport,
-                                                         argument.threshold_tcp,
-                                                         argument.threshold_udp)
+            got_response, time_took = \
+                generate_time_took(transport,
+                                   argument.threshold_tcp,
+                                   argument.threshold_udp)
 
-            print("INSERT dnsprobe,dst_name=%s,af=%d,proto=%s,prb_id=%s,got_response=%s time_took=%f %d" %
+            print("dnsprobe,dst_name=%s,af=%d,proto=%s,prb_id=%s,got_response=%s time_took=%f %d" %
                   (nameserver,
                    af,
                    transport,
