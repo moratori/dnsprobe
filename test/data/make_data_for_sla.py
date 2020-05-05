@@ -46,14 +46,16 @@ def generate_data(argument):
                                    argument.threshold_tcp,
                                    argument.threshold_udp)
 
-            print("dnsprobe,dst_name=%s,af=%d,proto=%s,prb_id=%s,got_response=%s time_took=%f,got_response_field=%s %d" %
+            got_response_field = 1 if got_response else 0
+
+            print("dnsprobe,dst_name=%s,af=%d,proto=%s,prb_id=%s,got_response=%s time_took=%f,got_response_field=%d %d" %
                   (nameserver,
                    af,
                    transport,
                    probe,
                    got_response,
                    time_took,
-                   got_response,
+                   got_response_field,
                    to_nanosecond(start_time)))
 
         start_time += argument.step_in_minutes * 60
