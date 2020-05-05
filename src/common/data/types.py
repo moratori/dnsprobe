@@ -135,7 +135,11 @@ class DNSMeasurementData():
         if not nsid:
             nsid = "unknown"
 
+        got_response = self.err is None
+
         field_data.update(dict(time_took=self.time_diff,
+                               # following field is needed by SLA calculation
+                               got_response_field=(1 if got_response else 0),
                                probe_uptime=self.server_boottime,
                                probe_asn=self.prb_asn,
                                probe_asn_desc=self.prb_asn_desc))
@@ -153,7 +157,7 @@ class DNSMeasurementData():
                                 proto=self.proto,
                                 rrtype=self.rrtype,
                                 qname=self.qname,
-                                got_response=self.err is None,
+                                got_response=got_response,
                                 error_class_name=error_class_name),
                       fields=field_data)
 
