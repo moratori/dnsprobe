@@ -49,7 +49,8 @@ class Dnsprobe:
         # unable to use `bind-parameter` for `with key` statement
         proc_start = time.time()
 
-        ret = self.app.session.query("show tag values with key = %s" %
+        ret = self.app.session.query("show tag values from dnsprobe \
+                                      with key = %s" %
                                      (tag))
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
@@ -90,7 +91,7 @@ class Dnsprobe:
             proc_start = time.time()
 
             ret = self.app.session.query(
-                "show tag values with key in \
+                "show tag values from dnsprobe with key in \
                 (prb_lat, prb_lon) where prb_id = $prb_id",
                 params=dict(params=json.dumps(dict(prb_id=prb_id))))
 
@@ -203,13 +204,13 @@ class Dnsprobe:
         proc_start = time.time()
 
         ret_af = self.app.session.query(
-            "show tag values with key = af where \
+            "show tag values from dnsprobe with key = af where \
              dst_name = $dst_name and prb_id = $prb_id",
             params=dict(params=json.dumps(dict(dst_name=dns_server_name,
                                                prb_id=probe_name))))
 
         ret_proto = self.app.session.query(
-            "show tag values with key = proto where \
+            "show tag values from dnsprobe with key = proto where \
              dst_name = $dst_name and prb_id = $prb_id",
             params=dict(params=json.dumps(dict(dst_name=dns_server_name,
                                                prb_id=probe_name))))
@@ -418,7 +419,6 @@ class Dnsprobe:
         return result
 
     def get_last_measured_soa_data(self, hours):
-
 
         current_time = datetime.datetime.utcnow()
         start_time = (current_time - datetime.timedelta(hours=hours)
