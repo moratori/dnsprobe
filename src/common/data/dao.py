@@ -534,3 +534,52 @@ class Dnsprobe:
             pass
 
         return ret
+
+
+class MES_CQ_Nameserver_Availability:
+
+    def __init__(self, app):
+        # app is subclass of `SetupwithInfluxdb`
+        self.app = app
+
+    def get_af_dst_name_combination(self):
+
+        result = {}
+
+        proc_start = time.time()
+
+        ret_dst_names = self.app.session.query(
+            "show tag values from \
+             \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
+             with key = dst_name")
+
+        for dst_names in ret_dst_names:
+            for dst_name in dst_names:
+                dst_name_value = dst_name["value"]
+
+                ret_af = self.app.session.query(
+                    "show tag values from \
+                     \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
+                     with key = af where \
+                     dst_name = $dst_name",
+                    params=dict(params=json.dumps(
+                        dict(dst_name=dst_name_value))))
+
+                af_list = []
+
+                for afs in ret_af:
+                    for af in afs:
+                        af_list.append(af["value"])
+
+                result[dst_name_value] = af_list
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return result
+
+    def count_total_measurements(self, dst_name, af, start_time, current_time):
+        return 43200
+
+    def count_failed_measurements(self, dst_name, af, start_time, current_time):
+        return 430
+
