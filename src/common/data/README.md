@@ -27,7 +27,7 @@ BEGIN
         "dnsprobe"."rp_01month_for_raw_measurement"."dnsprobe"
     WHERE
         rrtype = 'SOA'
-    GROUP BY time(1m), dst_name, af, prb_id, fill(1)
+    GROUP BY time(1m), dst_name, af, prb_id fill(1)
 END
 ```
 
@@ -39,7 +39,7 @@ BEGIN
         INTO "dnsprobe"."rp_12month_for_cont_query"."mes_cq_nameserver_availability"
     FROM
         "dnsprobe"."rp_03month_for_cont_query"."mes_cq_probe_versus_nameserver_availability"
-    GROUP BY time(1m), dst_name, af, fill(1)
+    GROUP BY time(1m), dst_name, af fill(1)
 END
 ```
 
