@@ -1,5 +1,6 @@
 # PATH=/path/to/python/interpreter
 # min hour day month dow command
 */1 * * * * /path/to/dnsprobe/bin/run_main_measurer.sh
+*/5 * * * * /path/to/dnsprobe/bin/run_main_calculate_sla.sh
 0 */3 * * * /path/to/dnsprobe/bin/run_main_create_measurement_target.sh
 0 */1 * * * /path/to/dnsprobe/bin/operations/run_dump_influxdb.sh
