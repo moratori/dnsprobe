@@ -75,3 +75,25 @@ class TestCommonDataDao(unittest.TestCase,
         self.assertTrue(isinstance(
             self.dao_mes_cq_nameserver_availability.get_af_dst_name_combination(),
             dict))
+
+    def test_10_count_total_measurements(self):
+        end_time = datetime.datetime.utcnow()
+        start_time = end_time - datetime.timedelta(
+            minutes=24 * 60 * 30)
+        self.assertTrue(isinstance(
+            self.dao_mes_cq_nameserver_availability.count_total_measurements(
+                "a.dns.jp", 4,
+                start_time.isoformat() + "Z",
+                end_time.isoformat() + "Z"),
+            int))
+
+    def test_11_count_failed_measurements(self):
+        end_time = datetime.datetime.utcnow()
+        start_time = end_time - datetime.timedelta(
+            minutes=24 * 60 * 30)
+        self.assertTrue(isinstance(
+            self.dao_mes_cq_nameserver_availability.count_failed_measurements(
+                "a.dns.jp", 4,
+                start_time.isoformat() + "Z",
+                end_time.isoformat() + "Z"),
+            int))

@@ -517,7 +517,7 @@ class Dnsprobe:
     def write_measurement_data(self, measured_data):
         ret = False
 
-        measurement_name = self.app.cnfg.data_store.database
+        measurement_name = (self.__class__.__name__).lower()
 
         try:
             points = [each.convert_influx_notation(measurement_name)
@@ -526,10 +526,9 @@ class Dnsprobe:
             ret = self.app.session.write_points(points)
             if not ret:
                 LOGGER.warning("writing data to the influxdb failed")
-                LOGGER.debug("while writing followeing %s" % str(points))
+                LOGGER.debug("while writing following %s" % str(points))
         except Exception as ex:
             LOGGER.warning("%s occurred while writing" % str(ex))
-            LOGGER.debug("while writing following %s" % str(points))
         finally:
             pass
 
@@ -577,9 +576,82 @@ class MES_CQ_Nameserver_Availability:
 
         return result
 
-    def count_total_measurements(self, dst_name, af, start_time, current_time):
-        return 43200
+    def count_total_measurements(self, dst_name, af, start_time, end_time):
 
-    def count_failed_measurements(self, dst_name, af, start_time, current_time):
-        return 430
+        proc_start = time.time()
 
+        ret_count = self.app.session.query(
+            "select count(mode) \
+             from \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
+             where dst_name = $dst_name and af = $af and \
+             $start_time <= time and \
+             time <= $end_time",
+            params=dict(params=json.dumps(dict(dst_name=dst_name,
+                                               af=af,
+                                               start_time=start_time,
+                                               end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        total_measurements = 0
+
+        for records in ret_count:
+            for data in records:
+                total_measurements = data["count"]
+
+        return total_measurements
+
+    def count_failed_measurements(self, dst_name, af, start_time, end_time):
+
+        proc_start = time.time()
+
+        ret_count = self.app.session.query(
+            "select count(mode) \
+             from \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
+             where dst_name = $dst_name and af = $af and \
+             $start_time <= time and \
+             time <= $end_time and \
+             mode = 0",
+            params=dict(params=json.dumps(dict(dst_name=dst_name,
+                                               af=af,
+                                               start_time=start_time,
+                                               end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        failed_measurements = 0
+
+        for records in ret_count:
+            for data in records:
+                failed_measurements = data["count"]
+
+        return failed_measurements
+
+
+class NameserverAvailability:
+
+    def __init__(self, app):
+        # app is subclass of `SetupwithInfluxdb`
+        self.app = app
+
+    def write_measurement_data(self, measured_data):
+        ret = False
+
+        measurement_name = (self.__class__.__name__).lower()
+
+        try:
+            points = [each.convert_influx_notation(measurement_name)
+                      for each in measured_data]
+            LOGGER.info("writing data to influxdb")
+            ret = self.app.session.write_points(
+                points,
+                retention_policy="rp_15month_for_nameserveravailability")
+            if not ret:
+                LOGGER.warning("writing data to the influxdb failed")
+                LOGGER.debug("while writing following %s" % str(points))
+        except Exception as ex:
+            LOGGER.warning("%s occurred while writing" % str(ex))
+        finally:
+            pass
+
+        return ret

@@ -43,6 +43,34 @@ class SupportedRRType(enum.IntEnum):
         return "%s" % (self.name.lower())
 
 
+class CalculatedSLA():
+
+    def __init__(self, end_time, start_time, dst_name, af, sla):
+        self.end_time = end_time
+        self.start_time = start_time
+        self.dst_name = dst_name
+        self.af = af
+        self.sla = sla
+
+    def convert_influx_notation(self, measurement_name):
+
+        result = dict(measurement=measurement_name,
+                      time=self.end_time,
+                      tags=dict(af=self.af,
+                                dst_name=self.dst_name),
+                      fields=dict(sla=self.sla,
+                                  start_time=self.start_time))
+
+        return result
+
+
+class DNS_name_server_availability(CalculatedSLA):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+
+
 class DNSMeasurementData():
 
     def __init__(self,

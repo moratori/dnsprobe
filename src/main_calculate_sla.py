@@ -10,6 +10,7 @@ import sys
 
 import common.common.framework as framework
 import common.data.dao as dao
+import common.data.types as types
 
 
 class SLACalculator(framework.SetupwithInfluxdb):
@@ -19,15 +20,18 @@ class SLACalculator(framework.SetupwithInfluxdb):
 
     def calculate_DNS_name_server_availability(self):
 
-        current_time = self.criteria
-        starting_time = current_time - datetime.timedelta(
-            minutes=self.cnfs.constants.calculation_range_in_minutes)
+        calc_range = self.cnfs.constants.calculation_range_in_minutes
+        end_time = self.criteria.isoformat() + "Z"
+        start_time = (self.criteria - datetime.timedelta(
+            minutes=calc_range)).isoformat() + "Z"
 
         self.logger.info("calculation range: %s - %s" % (
-            starting_time, current_time))
+            start_time, end_time))
 
         calculation_target = self.dao.get_af_dst_name_combination()
         self.logger.info("calculation_target: %s" % str(calculation_target))
+
+        result = []
 
         for (dst_name, afs) in calculation_target.items():
             for af in afs:
@@ -36,37 +40,36 @@ class SLACalculator(framework.SetupwithInfluxdb):
                     dst_name, af))
 
                 total_measurements = self.dao.count_total_measurements(
-                    dst_name, af, starting_time, current_time)
-
-                self.logger.info("total %d for %s %s while %s - %s" % (
-                    total_measurements,
-                    dst_name,
-                    af,
-                    str(starting_time),
-                    str(current_time)))
+                    dst_name, af, start_time, end_time)
 
                 failed_measurements = self.dao.count_failed_measurements(
-                    dst_name, af, starting_time, current_time)
+                    dst_name, af, start_time, end_time)
 
-                self.logger.info("failed %d for %s %s while %s - %s" % (
-                    failed_measurements,
-                    dst_name,
-                    af,
-                    str(starting_time),
-                    str(current_time)))
+                self.logger.info("failed / total =  %d / %d" % (
+                    failed_measurements, total_measurements))
 
-                sla = 100
+                sla_value = 100
                 if total_measurements != 0:
                     successful = \
                         float(total_measurements - failed_measurements)
-                    sla = (successful / total_measurements) * 100
+                    sla_value = (successful / total_measurements) * 100
                 else:
                     self.logger.warning("number of total measurement is zero!")
 
-                self.logger.info("calculated sla = %f" % sla)
+                self.logger.info("calculated sla = %f" % sla_value)
+
+                result.append(types.DNS_name_server_availability(end_time,
+                                                                 start_time,
+                                                                 dst_name,
+                                                                 af,
+                                                                 sla_value))
+
+        self.dao_nameserver_availability.write_measurement_data(result)
 
     def setup_application(self):
         self.dao = dao.MES_CQ_Nameserver_Availability(self)
+        self.dao_nameserver_availability = \
+            dao.NameserverAvailability(self)
         self.criteria = datetime.datetime.utcnow()
 
     def run_application(self):
