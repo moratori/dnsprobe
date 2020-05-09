@@ -9,22 +9,23 @@ CREATE DATABASE "dnsprobe"
 ## retention policies
 
 ```
-CREATE RETENTION POLICY "rp_01month_for_raw_measurement" on "dnsprobe"    DURATION  730h REPLICATION 1 DEFAULT
-CREATE RETENTION POLICY "rp_03month_for_cont_query"      on "dnsprobe"    DURATION 2190h REPLICATION 1
-CREATE RETENTION POLICY "rp_12month_for_cont_query"      on "dnsprobe"    DURATION 8760h REPLICATION 1
+CREATE RETENTION POLICY "rp_mes_dnsprobe"                                on "dnsprobe"    DURATION   730h REPLICATION 1 DEFAULT
+CREATE RETENTION POLICY "rp_mes_cq_probe_versus_nameserver_availability" on "dnsprobe"    DURATION  2190h REPLICATION 1
+CREATE RETENTION POLICY "rp_mes_cq_nameserver_availability"              on "dnsprobe"    DURATION  8760h REPLICATION 1
+CREATE RETENTION POLICY "rp_mes_nameserver_availability"                 on "dnsprobe"    DURATION 17520h REPLICATION 1
 ```
 
 ## continuous queries
 
 ### for SLA calculation
 ```
-CREATE CONTINUOUS QUERY "cq_probe_versus_nameserver_availability"
+CREATE CONTINUOUS QUERY "mes_cq_probe_versus_nameserver_availability"
 ON "dnsprobe"
 BEGIN
     SELECT max(got_response_field) 
-        INTO "dnsprobe"."rp_03month_for_cont_query"."mes_cq_probe_versus_nameserver_availability"
+        INTO "dnsprobe"."rp_mes_cq_probe_versus_nameserver_availability"."mes_cq_probe_versus_nameserver_availability"
     FROM 
-        "dnsprobe"."rp_01month_for_raw_measurement"."dnsprobe"
+        "dnsprobe"."rp_mes_dnsprobe"."mes_dnsprobe"
     WHERE
         rrtype = 'SOA'
     GROUP BY time(1m), dst_name, af, prb_id fill(1)
@@ -32,18 +33,18 @@ END
 ```
 
 ```
-CREATE CONTINUOUS QUERY "cq_nameserver_availability"
+CREATE CONTINUOUS QUERY "mes_cq_nameserver_availability"
 ON "dnsprobe"
 BEGIN
     SELECT mode(max) 
-        INTO "dnsprobe"."rp_12month_for_cont_query"."mes_cq_nameserver_availability"
+        INTO "dnsprobe"."rp_mes_cq_nameserver_availability"."mes_cq_nameserver_availability"
     FROM
-        "dnsprobe"."rp_03month_for_cont_query"."mes_cq_probe_versus_nameserver_availability"
+        "dnsprobe"."rp_mes_cq_probe_versus_nameserver_availability"."mes_cq_probe_versus_nameserver_availability"
     GROUP BY time(1m), dst_name, af fill(1)
 END
 ```
 
-## "dnsprobe"."rp_01month_for_raw_measurement"."dnsprobe"
+## "dnsprobe"."rp_mes_dnsprobe"."mes_dnsprobe"
 
 |KeyType |name               |SOA measurement    | DNSKEY measurement | NS measurement   |
 | ----   | ----              | ----              | ----               | ----             |

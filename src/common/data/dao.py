@@ -37,21 +37,51 @@ class MeasurementTarget(Base):
                     nullable=False)
 
 
-# PythonからInfluxdbを使うORMがなさそうなので、以下寄せ集め...
-class Dnsprobe:
+class InfluxDBMeasurementBase:
 
     def __init__(self, app):
         # app is subclass of `SetupwithInfluxdb`
         self.app = app
+        self.measurement_name = (self.__class__.__name__).lower()
+        self.retention_policy = "rp_%s" % self.measurement_name
+        self.measurement = '"%s"."%s"' % (self.retention_policy,
+                                          self.measurement_name)
+
+    def write_measurement_data(self, measured_data):
+        ret = False
+
+        try:
+            points = [each.convert_influx_notation(self.measurement_name)
+                      for each in measured_data]
+            LOGGER.info("writing data to influxdb")
+            ret = self.app.session.write_points(
+                points,
+                retention_policy=self.retention_policy)
+            if not ret:
+                LOGGER.warning("writing data to the influxdb failed")
+                LOGGER.debug("while writing following %s" % str(points))
+        except Exception as ex:
+            LOGGER.warning("%s occurred while writing" % str(ex))
+        finally:
+            pass
+
+        return ret
+
+
+# PythonからInfluxdbを使うORMがなさそうなので、以下寄せ集め...
+class Mes_dnsprobe(InfluxDBMeasurementBase):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
 
     def __show_tag_list(self, tag):
         # tag parameter MUST BE TRUSTED value
         # unable to use `bind-parameter` for `with key` statement
         proc_start = time.time()
 
-        ret = self.app.session.query("show tag values from dnsprobe \
+        ret = self.app.session.query("show tag values from %s \
                                       with key = %s" %
-                                     (tag))
+                                     (self.measurement, tag))
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
@@ -91,8 +121,9 @@ class Dnsprobe:
             proc_start = time.time()
 
             ret = self.app.session.query(
-                "show tag values from dnsprobe with key in \
-                (prb_lat, prb_lon) where prb_id = $prb_id",
+                "show tag values from %s with key in \
+                (prb_lat, prb_lon) where prb_id = $prb_id" % (
+                    self.measurement),
                 params=dict(params=json.dumps(dict(prb_id=prb_id))))
 
             LOGGER.debug("time took: %s" % (time.time() - proc_start))
@@ -118,10 +149,10 @@ class Dnsprobe:
         proc_start = time.time()
 
         ret_uptime = self.app.session.query(
-                    "select time, time_took from dnsprobe where \
+                    "select time, time_took from %s where \
                      prb_id = $prb_id \
                      order by time desc \
-                     limit 1",
+                     limit 1" % (self.measurement),
                     params=dict(params=json.dumps(
                         dict(prb_id=probe_id))))
 
@@ -143,10 +174,10 @@ class Dnsprobe:
         proc_start = time.time()
 
         ret_uptime = self.app.session.query(
-                    "select probe_uptime from dnsprobe where \
+                    "select probe_uptime from %s where \
                      prb_id = $prb_id \
                      order by time desc \
-                     limit 1",
+                     limit 1" % (self.measurement),
                     params=dict(params=json.dumps(
                         dict(prb_id=probe_id))))
 
@@ -172,11 +203,11 @@ class Dnsprobe:
 
         ret_desc = self.app.session.query(
             "select probe_asn, probe_asn_desc \
-             from dnsprobe  \
+             from %s \
              where prb_id = $prb_id \
              group by af \
              order by time desc \
-             limit 1",
+             limit 1" % (self.measurement),
             params=dict(params=json.dumps(
                 dict(prb_id=probe_id))))
 
@@ -204,14 +235,16 @@ class Dnsprobe:
         proc_start = time.time()
 
         ret_af = self.app.session.query(
-            "show tag values from dnsprobe with key = af where \
-             dst_name = $dst_name and prb_id = $prb_id",
+            "show tag values from %s with key = af where \
+             dst_name = $dst_name and prb_id = $prb_id" % (
+                self.measurement),
             params=dict(params=json.dumps(dict(dst_name=dns_server_name,
                                                prb_id=probe_name))))
 
         ret_proto = self.app.session.query(
-            "show tag values from dnsprobe with key = proto where \
-             dst_name = $dst_name and prb_id = $prb_id",
+            "show tag values from %s with key = proto where \
+             dst_name = $dst_name and prb_id = $prb_id" % (
+                 self.measurement),
             params=dict(params=json.dumps(dict(dst_name=dns_server_name,
                                                prb_id=probe_name))))
 
@@ -245,7 +278,7 @@ class Dnsprobe:
                                                              probe_names)
 
         ret = self.app.session.query(
-            "select mean(time_took) as averaged_time_took from dnsprobe where \
+            "select mean(time_took) as averaged_time_took from %s where \
              dst_name = $dst_name and \
              got_response = 'True' and \
              af = $af and \
@@ -254,7 +287,7 @@ class Dnsprobe:
              $start_time < time and \
              time < $end_time and \
              (%s) \
-             group by time(1m)" % prb_id_condition,
+             group by time(1m)" % (self.measurement, prb_id_condition),
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
                      af=af,
@@ -283,14 +316,14 @@ class Dnsprobe:
 
         ret = self.app.session.query(
             "select count(time_took) \
-             from dnsprobe where \
+             from %s where \
              got_response = 'True' and \
              dst_name = $dst_name and \
              rrtype = $rrtype and \
              $start_time < time and \
              time < $end_time and\
              (%s) \
-            group by nsid" % prb_id_condition,
+            group by nsid" % (self.measurement, prb_id_condition),
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
                      rrtype=rrtype,
@@ -310,7 +343,7 @@ class Dnsprobe:
                                                              probe_names)
 
         unanswered = self.app.session.query(
-            "select count(time_took) from dnsprobe where \
+            "select count(time_took) from %s where \
              got_response = 'False' and \
              dst_name = $dst_name and \
              af = $af and \
@@ -318,7 +351,7 @@ class Dnsprobe:
              rrtype = $rrtype and \
              $start_time < time and \
              time < $end_time and \
-             (%s)" % prb_id_condition,
+             (%s)" % (self.measurement, prb_id_condition),
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
                      af=af,
@@ -339,7 +372,7 @@ class Dnsprobe:
                                                              probe_names)
 
         answered = self.app.session.query(
-            "select count(time_took) from dnsprobe where \
+            "select count(time_took) from %s where \
              got_response = 'True' and \
              dst_name = $dst_name and \
              af = $af and \
@@ -347,7 +380,7 @@ class Dnsprobe:
              rrtype = $rrtype and \
              $start_time < time and \
              time < $end_time and \
-             (%s)" % prb_id_condition,
+             (%s)" % (self.measurement, prb_id_condition),
             params=dict(params=json.dumps(
                 dict(dst_name=dns_server_name,
                      af=af,
@@ -378,7 +411,7 @@ class Dnsprobe:
 
             percentile = self.app.session.query(
                 "select percentile(time_took, $each_step) \
-                 from dnsprobe \
+                 from %s \
                  where \
                  got_response = 'True' and \
                  time > $start_time and \
@@ -386,7 +419,7 @@ class Dnsprobe:
                  dst_name = $dst_name and \
                  rrtype = $rrtype and \
                  (%s) \
-                 group by af, proto" % (prb_id_condition),
+                 group by af, proto" % (self.measurement, prb_id_condition),
                 params=dict(params=json.dumps(
                     dict(each_step=each_step,
                          dst_name=dns_server_name,
@@ -430,11 +463,11 @@ class Dnsprobe:
 
         maximum_soa_for_each_nameserver = self.app.session.query(
             "select max(serial)\
-             from dnsprobe\
+             from %s \
              where got_response = 'True' and\
              rrtype = 'SOA' and \
              time > $start_time\
-             group by dst_name, af, proto, prb_id",
+             group by dst_name, af, proto, prb_id" % (self.measurement),
             params=dict(params=json.dumps(
                 dict(start_time=start_time))))
 
@@ -461,7 +494,7 @@ class Dnsprobe:
 
             first_measured = self.app.session.query(
                 "select first(serial)\
-                 from dnsprobe\
+                 from %s \
                  where \
                  got_response = 'True' and\
                  rrtype = 'SOA' and\
@@ -470,7 +503,7 @@ class Dnsprobe:
                  af = $af and\
                  proto = $proto and \
                  prb_id = $prb_id and\
-                 serial = $serial",
+                 serial = $serial" % (self.measurement),
                 params=dict(params=json.dumps(
                     dict(start_time=start_time,
                          dst_name=dst_name,
@@ -481,7 +514,7 @@ class Dnsprobe:
 
             last_measured = self.app.session.query(
                 "select last(serial)\
-                 from dnsprobe\
+                 from %s \
                  where \
                  got_response = 'True' and\
                  rrtype = 'SOA' and\
@@ -490,7 +523,7 @@ class Dnsprobe:
                  af = $af and\
                  proto = $proto and \
                  prb_id = $prb_id and\
-                 serial = $serial",
+                 serial = $serial" % (self.measurement),
                 params=dict(params=json.dumps(
                     dict(start_time=start_time,
                          dst_name=dst_name,
@@ -514,32 +547,11 @@ class Dnsprobe:
 
         return result
 
-    def write_measurement_data(self, measured_data):
-        ret = False
 
-        measurement_name = (self.__class__.__name__).lower()
+class Mes_cq_nameserver_availability(InfluxDBMeasurementBase):
 
-        try:
-            points = [each.convert_influx_notation(measurement_name)
-                      for each in measured_data]
-            LOGGER.info("writing data to influxdb")
-            ret = self.app.session.write_points(points)
-            if not ret:
-                LOGGER.warning("writing data to the influxdb failed")
-                LOGGER.debug("while writing following %s" % str(points))
-        except Exception as ex:
-            LOGGER.warning("%s occurred while writing" % str(ex))
-        finally:
-            pass
-
-        return ret
-
-
-class MES_CQ_Nameserver_Availability:
-
-    def __init__(self, app):
-        # app is subclass of `SetupwithInfluxdb`
-        self.app = app
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
 
     def get_af_dst_name_combination(self):
 
@@ -548,19 +560,15 @@ class MES_CQ_Nameserver_Availability:
         proc_start = time.time()
 
         ret_dst_names = self.app.session.query(
-            "show tag values from \
-             \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
-             with key = dst_name")
+            "show tag values from %s with key = dst_name" % self.measurement)
 
         for dst_names in ret_dst_names:
             for dst_name in dst_names:
                 dst_name_value = dst_name["value"]
 
                 ret_af = self.app.session.query(
-                    "show tag values from \
-                     \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
-                     with key = af where \
-                     dst_name = $dst_name",
+                    "show tag values from %s with key = af where \
+                     dst_name = $dst_name" % self.measurement,
                     params=dict(params=json.dumps(
                         dict(dst_name=dst_name_value))))
 
@@ -581,11 +589,10 @@ class MES_CQ_Nameserver_Availability:
         proc_start = time.time()
 
         ret_count = self.app.session.query(
-            "select count(mode) \
-             from \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
+            "select count(mode) from %s \
              where dst_name = $dst_name and af = $af and \
              $start_time <= time and \
-             time <= $end_time",
+             time <= $end_time" % self.measurement,
             params=dict(params=json.dumps(dict(dst_name=dst_name,
                                                af=af,
                                                start_time=start_time,
@@ -606,12 +613,11 @@ class MES_CQ_Nameserver_Availability:
         proc_start = time.time()
 
         ret_count = self.app.session.query(
-            "select count(mode) \
-             from \"rp_12month_for_cont_query\".\"mes_cq_nameserver_availability\" \
+            "select count(mode) from %s \
              where dst_name = $dst_name and af = $af and \
              $start_time <= time and \
              time <= $end_time and \
-             mode = 0",
+             mode = 0" % self.measurement,
             params=dict(params=json.dumps(dict(dst_name=dst_name,
                                                af=af,
                                                start_time=start_time,
@@ -627,31 +633,11 @@ class MES_CQ_Nameserver_Availability:
 
         return failed_measurements
 
-
-class NameserverAvailability:
-
-    def __init__(self, app):
-        # app is subclass of `SetupwithInfluxdb`
-        self.app = app
-
     def write_measurement_data(self, measured_data):
-        ret = False
+        pass
 
-        measurement_name = (self.__class__.__name__).lower()
 
-        try:
-            points = [each.convert_influx_notation(measurement_name)
-                      for each in measured_data]
-            LOGGER.info("writing data to influxdb")
-            ret = self.app.session.write_points(
-                points,
-                retention_policy="rp_15month_for_nameserveravailability")
-            if not ret:
-                LOGGER.warning("writing data to the influxdb failed")
-                LOGGER.debug("while writing following %s" % str(points))
-        except Exception as ex:
-            LOGGER.warning("%s occurred while writing" % str(ex))
-        finally:
-            pass
+class Mes_nameserver_availability(InfluxDBMeasurementBase):
 
-        return ret
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)

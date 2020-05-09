@@ -67,9 +67,9 @@ class SLACalculator(framework.SetupwithInfluxdb):
         self.dao_nameserver_availability.write_measurement_data(result)
 
     def setup_application(self):
-        self.dao = dao.MES_CQ_Nameserver_Availability(self)
+        self.dao = dao.Mes_cq_nameserver_availability(self)
         self.dao_nameserver_availability = \
-            dao.NameserverAvailability(self)
+            dao.Mes_nameserver_availability(self)
         self.criteria = datetime.datetime.utcnow()
 
     def run_application(self):

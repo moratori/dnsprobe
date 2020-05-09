@@ -23,7 +23,7 @@ class SOAMonitor(framework.SetupwithInfluxdb):
 
     def __init__(self):
         super().__init__(__name__, __file__)
-        self.dao_dnsprobe = dao.Dnsprobe(self)
+        self.dao_dnsprobe = dao.Mes_dnsprobe(self)
         self.logic = soaviewerlogic.SOAViewerLogic(self)
 
     def make_header(self):

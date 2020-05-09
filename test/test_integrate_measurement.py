@@ -101,7 +101,7 @@ class TestIntegrateMeasurement(framework.SetupwithMySQLdb,
             mes.load_measurement_info()
             self.assertTrue(hasattr(mes, "measurement_info"))
 
-            mes.dao_dnsprobe = dao.Dnsprobe(mes)
+            mes.dao_dnsprobe = dao.Mes_dnsprobe(mes)
 
             self.assertTrue(mes.run_application() == 0)
 

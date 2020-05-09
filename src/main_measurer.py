@@ -321,7 +321,7 @@ class Measurer(framework.SetupwithInfluxdb):
         self.validate_id()
         self.set_net_description()
         self.load_measurement_info()
-        self.dao_dnsprobe = dao.Dnsprobe(self)
+        self.dao_dnsprobe = dao.Mes_dnsprobe(self)
 
     def run_application(self):
         result = self.measure_toplevel()

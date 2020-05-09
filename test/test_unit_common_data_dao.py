@@ -20,9 +20,9 @@ class TestCommonDataDao(unittest.TestCase,
 
     def setUp(self):
         self.setup_resource()
-        self.dao_dnsprobe = dao.Dnsprobe(self)
+        self.dao_dnsprobe = dao.Mes_dnsprobe(self)
         self.dao_mes_cq_nameserver_availability = \
-            dao.MES_CQ_Nameserver_Availability(self)
+            dao.Mes_cq_nameserver_availability(self)
 
     def tearDown(self):
         self.teardown_resource()
@@ -53,9 +53,10 @@ class TestCommonDataDao(unittest.TestCase,
             self.assertTrue(self.dao_dnsprobe.get_probe_net_desc(probe_id))
 
     def test_7_get_af_proto_combination(self):
-        self.assertTrue(self.dao_dnsprobe.get_af_proto_combination(
-            "a.dns.jp",
-            ["sjc-3640367842", "tyo-3583024419"]))
+        self.assertTrue(isinstance(
+            self.dao_dnsprobe.get_af_proto_combination(
+                "a.dns.jp",
+                ["sjc-3640367842", "tyo-3583024419"]), list))
 
     def test_8_get_percentile_data(self):
         current_time = datetime.datetime.utcnow()
