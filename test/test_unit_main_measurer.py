@@ -121,7 +121,8 @@ class TestMainMeasurer(unittest.TestCase):
             protocol,
             qname,
             rrtype,
-            qo))
+            qo,
+            500))
 
     def test_8_measurement_core(self):
 
@@ -161,7 +162,8 @@ class TestMainMeasurer(unittest.TestCase):
             protocol,
             qname,
             rrtype,
-            qo))
+            qo,
+            1500))
 
     def test_9_measurement_core(self):
 
@@ -201,7 +203,8 @@ class TestMainMeasurer(unittest.TestCase):
             protocol,
             qname,
             rrtype,
-            qo))
+            qo,
+            1500))
 
     def test_10_measurement_toplevel(self):
         raw_measurement_info = [

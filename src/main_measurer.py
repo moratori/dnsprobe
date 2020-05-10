@@ -186,7 +186,8 @@ class Measurer(framework.SetupwithInfluxdb):
                          proto,
                          qname,
                          rrtype,
-                         qo):
+                         qo,
+                         slr_threshold):
 
         response = None
         err = None
@@ -228,7 +229,8 @@ class Measurer(framework.SetupwithInfluxdb):
                                                       rrtype,
                                                       err,
                                                       response,
-                                                      self.cnfs.rdata_storing)
+                                                      self.cnfs.rdata_storing,
+                                                      slr_threshold)
         return measured_data
 
     def measure_toplevel(self):
@@ -238,8 +240,13 @@ class Measurer(framework.SetupwithInfluxdb):
         current_time = str(datetime.datetime.utcnow().isoformat()) + "Z"
         result = []
 
-        queryer_info_by_protocol = {"udp": (dns.query.udp, udp_timeout),
-                                    "tcp": (dns.query.tcp, tcp_timeout)}
+        queryer_info_by_protocol = \
+            {"udp": (dns.query.udp,
+                     udp_timeout,
+                     self.cnfg.constants.udp_slr_threshold * 1000),
+             "tcp": (dns.query.tcp,
+                     tcp_timeout,
+                     self.cnfg.constants.tcp_slr_threshold * 1000)}
 
         threadpool = ThreadPool(processes=1)
         async_results = []
@@ -265,7 +272,8 @@ class Measurer(framework.SetupwithInfluxdb):
                     self.logger.error("unknown version addr: %s" % str(addr))
                     continue
 
-                queryer, timeout = queryer_info_by_protocol[protocol]
+                queryer, timeout, slr_threshold = \
+                    queryer_info_by_protocol[protocol]
 
                 qname = query.qname
                 rrtype = query.rrtype
@@ -304,7 +312,8 @@ class Measurer(framework.SetupwithInfluxdb):
                                             protocol,
                                             qname,
                                             rrtype,
-                                            qo
+                                            qo,
+                                            slr_threshold
                                             )))
         for each in async_results:
             result.append(each.get())

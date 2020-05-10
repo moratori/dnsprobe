@@ -105,7 +105,8 @@ class DNSMeasurementData(InfluxDBPoints):
                  rrtype,
                  err,
                  response,
-                 rdata_storing):
+                 rdata_storing,
+                 slr_threshold):
 
         self.current_time = current_time
         self.time_diff = time_diff
@@ -125,6 +126,7 @@ class DNSMeasurementData(InfluxDBPoints):
         self.err = err
         self.response = response
         self.rdata_storing = rdata_storing
+        self.slr_threshold = slr_threshold
 
     def __parse_response_to_fields(self, qname, rtype, res):
 
@@ -178,10 +180,15 @@ class DNSMeasurementData(InfluxDBPoints):
             nsid = "unknown"
 
         got_response = self.err is None
+        slr_exceeded = True if self.slr_threshold < self.time_diff else False
 
         field_data.update(dict(time_took=self.time_diff,
-                               # following field is needed by SLA calculation
+                               # following field is needed by SLA calculation.
+                               # because of using grouping for field key.
+                               # the value always same as got_response tag key
                                got_response_field=(1 if got_response else 0),
+                               # same above
+                               slr_exceeded_field=(1 if slr_exceeded else 0),
                                probe_uptime=self.server_boottime,
                                probe_asn=self.prb_asn,
                                probe_asn_desc=self.prb_asn_desc))
@@ -200,6 +207,7 @@ class DNSMeasurementData(InfluxDBPoints):
                                 rrtype=self.rrtype,
                                 qname=self.qname,
                                 got_response=got_response,
+                                slr_exceeded=slr_exceeded,
                                 error_class_name=error_class_name),
                       fields=field_data)
 
@@ -316,7 +324,8 @@ def make_DNSMeasurementData(current_time,
                             rrtype,
                             err,
                             response,
-                            rdata_storing):
+                            rdata_storing,
+                            slr_threshold):
 
     constractors = {SupportedRRType.SOA: SOA_DNSMeasurementData,
                     SupportedRRType.NS: NS_DNSMeasurementData,
@@ -339,7 +348,8 @@ def make_DNSMeasurementData(current_time,
             rrtype,
             err,
             response,
-            rdata_storing)
+            rdata_storing,
+            slr_threshold)
 
     rrtype_obj = dns.rdatatype.from_text(rrtype)
 
