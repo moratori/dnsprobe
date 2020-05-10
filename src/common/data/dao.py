@@ -47,6 +47,37 @@ class InfluxDBMeasurementBase:
         self.measurement = '"%s"."%s"' % (self.retention_policy,
                                           self.measurement_name)
 
+    def get_af_dst_name_combination(self):
+
+        result = {}
+
+        proc_start = time.time()
+
+        ret_dst_names = self.app.session.query(
+            "show tag values from %s with key = dst_name" % self.measurement)
+
+        for dst_names in ret_dst_names:
+            for dst_name in dst_names:
+                dst_name_value = dst_name["value"]
+
+                ret_af = self.app.session.query(
+                    "show tag values from %s with key = af where \
+                     dst_name = $dst_name" % self.measurement,
+                    params=dict(params=json.dumps(
+                        dict(dst_name=dst_name_value))))
+
+                af_list = []
+
+                for afs in ret_af:
+                    for af in afs:
+                        af_list.append(af["value"])
+
+                result[dst_name_value] = af_list
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        return result
+
     def write_measurement_data(self, measured_data):
         ret = False
 
@@ -553,37 +584,6 @@ class Mes_cq_nameserver_availability(InfluxDBMeasurementBase):
     def __init__(self, *positional, **kw):
         super().__init__(*positional, **kw)
 
-    def get_af_dst_name_combination(self):
-
-        result = {}
-
-        proc_start = time.time()
-
-        ret_dst_names = self.app.session.query(
-            "show tag values from %s with key = dst_name" % self.measurement)
-
-        for dst_names in ret_dst_names:
-            for dst_name in dst_names:
-                dst_name_value = dst_name["value"]
-
-                ret_af = self.app.session.query(
-                    "show tag values from %s with key = af where \
-                     dst_name = $dst_name" % self.measurement,
-                    params=dict(params=json.dumps(
-                        dict(dst_name=dst_name_value))))
-
-                af_list = []
-
-                for afs in ret_af:
-                    for af in afs:
-                        af_list.append(af["value"])
-
-                result[dst_name_value] = af_list
-
-        LOGGER.debug("time took: %s" % (time.time() - proc_start))
-
-        return result
-
     def count_total_measurements(self, dst_name, af, start_time, end_time):
 
         proc_start = time.time()
@@ -641,3 +641,22 @@ class Mes_nameserver_availability(InfluxDBMeasurementBase):
 
     def __init__(self, *positional, **kw):
         super().__init__(*positional, **kw)
+
+    def get_recent_sla(self, dst_name, af):
+
+        ret_sla = self.app.session.query(
+            "select sla from %s \
+             where \
+             dst_name = $dst_name and \
+             af = $af \
+             order by time desc \
+             limit 1" % self.measurement,
+            params=dict(params=json.dumps(dict(dst_name=dst_name,
+                                               af=af))))
+
+        for records in ret_sla:
+            for data in records:
+                return data["sla"]
+
+        LOGGER.warning("unable to get service level for %s(%s)" %
+                       (dst_name, af))

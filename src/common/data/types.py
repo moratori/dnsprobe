@@ -43,7 +43,18 @@ class SupportedRRType(enum.IntEnum):
         return "%s" % (self.name.lower())
 
 
-class CalculatedSLA():
+class InfluxDBPoints():
+
+    """
+    InfluxDBに書き込むデータを保持するクラス
+    """
+
+
+class CalculatedSLA(InfluxDBPoints):
+
+    """
+    サービスレベルの計算結果を保持するクラス
+    """
 
     def __init__(self, end_time, start_time, dst_name, af, sla):
         self.end_time = end_time
@@ -70,8 +81,11 @@ class DNS_name_server_availability(CalculatedSLA):
         super().__init__(*positional, **kw)
 
 
+class DNSMeasurementData(InfluxDBPoints):
 
-class DNSMeasurementData():
+    """
+    測定結果を保持するクラス
+    """
 
     def __init__(self,
                  current_time,
