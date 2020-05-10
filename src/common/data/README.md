@@ -52,6 +52,7 @@ END
 ```
 CREATE CONTINUOUS QUERY "mes_cq_tcp_nameserver_availability"
 ON "dnsprobe"
+BEGIN
     SELECT mode(slr_exceeded_field)
         INTO "dnsprobe"."rp_mes_cq_tcp_nameserver_availability"."mes_cq_tcp_nameserver_availability"
     FROM 
@@ -67,6 +68,7 @@ END
 ```
 CREATE CONTINUOUS QUERY "mes_cq_udp_nameserver_availability"
 ON "dnsprobe"
+BEGIN
     SELECT mode(slr_exceeded_field)
         INTO "dnsprobe"."rp_mes_cq_udp_nameserver_availability"."mes_cq_udp_nameserver_availability"
     FROM 
