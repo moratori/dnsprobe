@@ -105,9 +105,6 @@ class SLAViewerLogic():
                 v6_x = []
                 v6_y = []
 
-                successful_color = "green"
-                failed_color = "crimson"
-
                 for (dst_name, afs) in dst_name_versus_af.items():
                     for af in afs:
                         if af == "4":
@@ -122,17 +119,8 @@ class SLAViewerLogic():
                             LOGGER.warning("unexpected address family: %s" %
                                            str(af))
 
-                v4colors = [failed_color if sla < 100 else successful_color
-                            for sla in v4_y]
-                v6colors = [failed_color if sla < 100 else successful_color
-                            for sla in v6_y]
-
-                traces.append(go.Bar(name="v4", x=v4_x, y=v4_y, text=v4_y,
-                                     marker_color=v4colors,
-                                     textposition="auto"))
-                traces.append(go.Bar(name="v6", x=v6_x, y=v6_y, text=v6_y,
-                                     marker_color=v6colors,
-                                     textposition="auto"))
+                traces.append(go.Bar(name="v4", x=v4_x, y=v4_y))
+                traces.append(go.Bar(name="v6", x=v6_x, y=v6_y))
 
             else:
                 pass
@@ -141,6 +129,7 @@ class SLAViewerLogic():
                           layout=go.Layout(
                               title=kind,
                               showlegend=True,
+                              barmode="group",
                               xaxis=dict(title="Authoritative DNS Servers"),
                               yaxis=dict(title="Service Level (%)",
                                          tickmode="linear",
