@@ -95,39 +95,40 @@ class SLAViewerLogic():
             traces = []
 
             if kind == types.DNS_name_server_availability.__name__.lower():
-
-                dst_name_versus_af = \
-                    self.slaviewer.dao_nameserver_avail.\
-                    get_af_dst_name_combination()
-
-                v4_x = []
-                v4_y = []
-                v6_x = []
-                v6_y = []
-
-                for (dst_name, afs) in dst_name_versus_af.items():
-                    for af in afs:
-                        if af == "4":
-                            v4_x.append(dst_name)
-                            v4_y.append(self.slaviewer.dao_nameserver_avail.
-                                        get_recent_sla(dst_name, af))
-                        elif af == "6":
-                            v6_x.append(dst_name)
-                            v6_y.append(self.slaviewer.dao_nameserver_avail.
-                                        get_recent_sla(dst_name, af))
-                        else:
-                            LOGGER.warning("unexpected address family: %s" %
-                                           str(af))
-
-                traces.append(go.Bar(name="v4", x=v4_x, y=v4_y))
-                traces.append(go.Bar(name="v6", x=v6_x, y=v6_y))
-
+                dao = self.slaviewer.dao_nameserver_avail
+            elif kind == types.TCP_DNS_resolution_RTT.__name__.lower():
+                dao = self.slaviewer.dao_tcp_nameserver_avail
+            elif kind == types.UDP_DNS_resolution_RTT.__name__.lower():
+                dao = self.slaviewer.dao_udp_nameserver_avail
             else:
-                pass
+                LOGGER.warning("unexpected service level kind: %s" % str(kind))
+                return dict(data=traces)
+
+            dst_name_versus_af = dao.get_af_dst_name_combination()
+
+            v4_x = []
+            v4_y = []
+            v6_x = []
+            v6_y = []
+
+            for (dst_name, afs) in dst_name_versus_af.items():
+                for af in afs:
+                    if af == "4":
+                        v4_x.append(dst_name)
+                        v4_y.append(dao.get_recent_sla(dst_name, af))
+                    elif af == "6":
+                        v6_x.append(dst_name)
+                        v6_y.append(dao.get_recent_sla(dst_name, af))
+                    else:
+                        LOGGER.warning("unexpected address family: %s" %
+                                       str(af))
+
+            traces.append(go.Bar(name="v4", x=v4_x, y=v4_y))
+            traces.append(go.Bar(name="v6", x=v6_x, y=v6_y))
 
             figure = dict(data=traces,
                           layout=go.Layout(
-                              title=kind,
+                              title=kind + "(SOA record, monthly basis)",
                               showlegend=True,
                               barmode="group",
                               xaxis=dict(title="Authoritative DNS Servers"),

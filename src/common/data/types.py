@@ -81,6 +81,18 @@ class DNS_name_server_availability(CalculatedSLA):
         super().__init__(*positional, **kw)
 
 
+class TCP_DNS_resolution_RTT(CalculatedSLA):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+
+class UDP_DNS_resolution_RTT(CalculatedSLA):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+
 class DNSMeasurementData(InfluxDBPoints):
 
     """

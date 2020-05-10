@@ -28,7 +28,8 @@ class SLACalculator(framework.SetupwithInfluxdb):
         self.logger.info("calculation range: %s - %s" % (
             start_time, end_time))
 
-        calculation_target = self.dao.get_af_dst_name_combination()
+        calculation_target = self.dao_cq_nameserver_availability.\
+            get_af_dst_name_combination()
         self.logger.info("calculation_target: %s" % str(calculation_target))
 
         result = []
@@ -39,11 +40,13 @@ class SLACalculator(framework.SetupwithInfluxdb):
                 self.logger.info("calculation start for %s %s" % (
                     dst_name, af))
 
-                total_measurements = self.dao.count_total_measurements(
-                    dst_name, af, start_time, end_time)
+                total_measurements = self.dao_cq_nameserver_availability.\
+                    count_total_measurements(dst_name, af, start_time,
+                                             end_time)
 
-                failed_measurements = self.dao.count_failed_measurements(
-                    dst_name, af, start_time, end_time)
+                failed_measurements = self.dao_cq_nameserver_availability.\
+                    count_failed_measurements(dst_name, af, start_time,
+                                              end_time)
 
                 self.logger.info("failed / total =  %d / %d" % (
                     failed_measurements, total_measurements))
@@ -66,14 +69,129 @@ class SLACalculator(framework.SetupwithInfluxdb):
 
         self.dao_nameserver_availability.write_measurement_data(result)
 
+    def calculate_TCP_DNS_resolution_RTT(self):
+        calc_range = self.cnfs.constants.calculation_range_in_minutes
+        end_time = self.criteria.isoformat() + "Z"
+        start_time = (self.criteria - datetime.timedelta(
+            minutes=calc_range)).isoformat() + "Z"
+
+        self.logger.info("calculation range: %s - %s" % (
+            start_time, end_time))
+
+        calculation_target = self.dao_cq_tcp_nameserver_availability.\
+            get_af_dst_name_combination()
+        self.logger.info("calculation_target: %s" % str(calculation_target))
+
+        result = []
+
+        for (dst_name, afs) in calculation_target.items():
+            for af in afs:
+
+                self.logger.info("calculation start for %s %s" % (
+                    dst_name, af))
+
+                total_measurements = self.dao_cq_tcp_nameserver_availability.\
+                    count_total_measurements(dst_name, af, start_time,
+                                             end_time)
+
+                failed_measurements = self.dao_cq_tcp_nameserver_availability.\
+                    count_failed_measurements(dst_name, af, start_time,
+                                              end_time)
+
+                self.logger.info("failed / total =  %d / %d" % (
+                    failed_measurements, total_measurements))
+
+                sla_value = 100
+                if total_measurements != 0:
+                    successful = \
+                        float(total_measurements - failed_measurements)
+                    sla_value = (successful / total_measurements) * 100
+                else:
+                    self.logger.warning("number of total measurement is zero!")
+
+                self.logger.info("calculated sla = %f" % sla_value)
+
+                result.append(types.TCP_DNS_resolution_RTT(end_time,
+                                                           start_time,
+                                                           dst_name,
+                                                           af,
+                                                           sla_value))
+
+        self.dao_tcp_nameserver_availability.write_measurement_data(result)
+
+    def calculate_UDP_DNS_resolution_RTT(self):
+        calc_range = self.cnfs.constants.calculation_range_in_minutes
+        end_time = self.criteria.isoformat() + "Z"
+        start_time = (self.criteria - datetime.timedelta(
+            minutes=calc_range)).isoformat() + "Z"
+
+        self.logger.info("calculation range: %s - %s" % (
+            start_time, end_time))
+
+        calculation_target = self.dao_cq_udp_nameserver_availability.\
+            get_af_dst_name_combination()
+        self.logger.info("calculation_target: %s" % str(calculation_target))
+
+        result = []
+
+        for (dst_name, afs) in calculation_target.items():
+            for af in afs:
+
+                self.logger.info("calculation start for %s %s" % (
+                    dst_name, af))
+
+                total_measurements = self.dao_cq_udp_nameserver_availability.\
+                    count_total_measurements(dst_name, af, start_time,
+                                             end_time)
+
+                failed_measurements = self.dao_cq_udp_nameserver_availability.\
+                    count_failed_measurements(dst_name, af, start_time,
+                                              end_time)
+
+                self.logger.info("failed / total =  %d / %d" % (
+                    failed_measurements, total_measurements))
+
+                sla_value = 100
+                if total_measurements != 0:
+                    successful = \
+                        float(total_measurements - failed_measurements)
+                    sla_value = (successful / total_measurements) * 100
+                else:
+                    self.logger.warning("number of total measurement is zero!")
+
+                self.logger.info("calculated sla = %f" % sla_value)
+
+                result.append(types.UDP_DNS_resolution_RTT(end_time,
+                                                           start_time,
+                                                           dst_name,
+                                                           af,
+                                                           sla_value))
+
+        self.dao_udp_nameserver_availability.write_measurement_data(result)
+
     def setup_application(self):
-        self.dao = dao.Mes_cq_nameserver_availability(self)
+
+        self.dao_cq_nameserver_availability = \
+            dao.Mes_cq_nameserver_availability(self)
         self.dao_nameserver_availability = \
             dao.Mes_nameserver_availability(self)
+
+        self.dao_cq_tcp_nameserver_availability = \
+            dao.Mes_cq_tcp_nameserver_availability(self)
+        self.dao_tcp_nameserver_availability = \
+            dao.Mes_tcp_nameserver_availability(self)
+
+        self.dao_cq_udp_nameserver_availability = \
+            dao.Mes_cq_udp_nameserver_availability(self)
+        self.dao_udp_nameserver_availability = \
+            dao.Mes_udp_nameserver_availability(self)
+
         self.criteria = datetime.datetime.utcnow()
 
     def run_application(self):
         self.calculate_DNS_name_server_availability()
+        self.calculate_TCP_DNS_resolution_RTT()
+        self.calculate_UDP_DNS_resolution_RTT()
 
 
 def main():

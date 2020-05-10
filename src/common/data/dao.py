@@ -660,3 +660,55 @@ class Mes_nameserver_availability(InfluxDBMeasurementBase):
 
         LOGGER.warning("unable to get service level for %s(%s)" %
                        (dst_name, af))
+
+
+class Mes_cq_tcp_nameserver_availability(Mes_cq_nameserver_availability):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+    def count_failed_measurements(self, dst_name, af, start_time, end_time):
+
+        proc_start = time.time()
+
+        ret_count = self.app.session.query(
+            "select count(mode) from %s \
+             where dst_name = $dst_name and af = $af and \
+             $start_time <= time and \
+             time <= $end_time and \
+             mode = 1" % self.measurement,
+            params=dict(params=json.dumps(dict(dst_name=dst_name,
+                                               af=af,
+                                               start_time=start_time,
+                                               end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        failed_measurements = 0
+
+        for records in ret_count:
+            for data in records:
+                failed_measurements = data["count"]
+
+        return failed_measurements
+
+    def write_measurement_data(self, measured_data):
+        pass
+
+
+class Mes_tcp_nameserver_availability(Mes_nameserver_availability):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+
+class Mes_cq_udp_nameserver_availability(Mes_cq_tcp_nameserver_availability):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)
+
+
+class Mes_udp_nameserver_availability(Mes_nameserver_availability):
+
+    def __init__(self, *positional, **kw):
+        super().__init__(*positional, **kw)

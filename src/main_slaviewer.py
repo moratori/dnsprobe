@@ -24,6 +24,10 @@ class SLAMonitor(framework.SetupwithInfluxdb):
         super().__init__(__name__, __file__)
         self.dao_nameserver_avail = \
             dao.Mes_nameserver_availability(self)
+        self.dao_tcp_nameserver_avail = \
+            dao.Mes_tcp_nameserver_availability(self)
+        self.dao_udp_nameserver_avail = \
+            dao.Mes_udp_nameserver_availability(self)
         self.logic = slaviewerlogic.SLAViewerLogic(self)
 
     def make_header(self):
