@@ -10,12 +10,15 @@ CREATE DATABASE "dnsprobe"
 
 ```
 CREATE RETENTION POLICY "rp_mes_dnsprobe"                                on "dnsprobe"    DURATION   730h REPLICATION 1 DEFAULT
+
 CREATE RETENTION POLICY "rp_mes_cq_probe_versus_nameserver_availability" on "dnsprobe"    DURATION  2190h REPLICATION 1
 CREATE RETENTION POLICY "rp_mes_cq_nameserver_availability"              on "dnsprobe"    DURATION  8760h REPLICATION 1
-CREATE RETENTION POLICY "rp_mes_cq_tcp_nameserver_availability"          on "dnsprobe"    DURATION  8760h REPLICATION 1
-CREATE RETENTION POLICY "rp_mes_cq_udp_nameserver_availability"          on "dnsprobe"    DURATION  8760h REPLICATION 1
 CREATE RETENTION POLICY "rp_mes_nameserver_availability"                 on "dnsprobe"    DURATION 17520h REPLICATION 1
+
+CREATE RETENTION POLICY "rp_mes_cq_tcp_nameserver_availability"          on "dnsprobe"    DURATION  8760h REPLICATION 1
 CREATE RETENTION POLICY "rp_mes_tcp_nameserver_availability"             on "dnsprobe"    DURATION 17520h REPLICATION 1
+
+CREATE RETENTION POLICY "rp_mes_cq_udp_nameserver_availability"          on "dnsprobe"    DURATION  8760h REPLICATION 1
 CREATE RETENTION POLICY "rp_mes_udp_nameserver_availability"             on "dnsprobe"    DURATION 17520h REPLICATION 1
 ```
 
