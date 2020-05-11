@@ -327,7 +327,7 @@ class Measurer(framework.SetupwithInfluxdb):
         self.set_measurer_id()
         self.set_global_ipaddress()
         self.set_server_boottime()
-#        self.validate_id()
+        self.validate_id()
         self.set_net_description()
         self.load_measurement_info()
         self.dao_dnsprobe = dao.Mes_dnsprobe(self)
@@ -343,7 +343,6 @@ class Measurer(framework.SetupwithInfluxdb):
 def main():
     try:
         measurer = Measurer()
-        measurer.ipv4 = "10.0.2.15"
     except Exception:
         # LOGGERのセットアップ自体にも失敗している可能性ありの為
         # 標準出力にログ出力
