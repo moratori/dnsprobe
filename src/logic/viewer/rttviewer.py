@@ -283,12 +283,10 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "Answered Ratio(%s from selected probes)<br>timeout threshold: tcp(%.1fsec),udp(%.1fsec)" % (
-                dns_server_name,
-                self.rttviewer.cnfg.constants.tcp_timeout,
-                self.rttviewer.cnfg.constants.udp_timeout)
+            title = "RTT distribution(%s from selected probes)" % (
+                dns_server_name)
 
-            labels = ["Unanswered", "Answered"]
+            labels = ["Failed", "Exceeded specific threshold", "Successful"]
             donut_size = 0.3
             hoverinfo = "label+percent+name"
             row_tiling_num = 2
@@ -303,46 +301,33 @@ class RTTViewerLogic():
                 r = int(n / row_tiling_num)
                 c = int(n % row_tiling_num)
 
-                unanswered = \
-                    self.rttviewer.dao_dnsprobe.get_ratiograph_unanswered(
-                        dns_server_name,
-                        probe_name,
-                        af,
-                        proto,
-                        rrtype,
-                        start_time,
-                        end_time)
+                args = (dns_server_name, probe_name, af, proto, rrtype,
+                        start_time, end_time)
 
-                answered = \
-                    self.rttviewer.dao_dnsprobe.get_ratiograph_answered(
-                        dns_server_name,
-                        probe_name,
-                        af,
-                        proto,
-                        rrtype,
-                        start_time,
-                        end_time)
+                failed_count = self.rttviewer.dao_dnsprobe.\
+                    get_ratiograph_failed(*args)
 
-                unanswered_count = 0
-                for records in unanswered:
-                    for data in records:
-                        unanswered_count = data["count"]
-                answered_count = 0
-                for records in answered:
-                    for data in records:
-                        answered_count = data["count"]
+                exceeded_count = self.rttviewer.dao_dnsprobe.\
+                    get_ratiograph_exceeded_slr(*args)
 
-                if (unanswered_count + answered_count) == 0:
+                successful_count = self.rttviewer.dao_dnsprobe.\
+                    get_ratiograph_successful(*args)
+
+                if (failed_count + successful_count + exceeded_count) == 0:
                     continue
 
-                traces.append(go.Pie(values=[unanswered_count, answered_count],
+                traces.append(go.Pie(values=[failed_count,
+                                             exceeded_count,
+                                             successful_count],
                                      labels=labels,
                                      domain=dict(row=r, column=c),
                                      name=snt.escape("%s IPv%s" %
                                                      (proto.upper(), af)),
                                      hoverinfo=hoverinfo,
                                      hole=donut_size,
-                                     marker=dict(colors=["red", "green"])))
+                                     marker=dict(colors=["red",
+                                                         "orange",
+                                                         "green"])))
 
             figure = dict(data=traces,
                           layout=go.Layout(title=title,

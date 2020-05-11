@@ -365,15 +365,23 @@ class Mes_dnsprobe(InfluxDBMeasurementBase):
 
         return ret
 
-    def get_ratiograph_unanswered(self, dns_server_name, probe_names, af,
-                                  proto, rrtype, start_time, end_time):
+    def get_ratiograph_failed(self, dns_server_name, probe_names, af,
+                              proto, rrtype, start_time, end_time):
+
+        """
+        got_response | slr_exceeded
+             f       |      f      -> count_failed
+             f       |      t      -> count_failed
+             t       |      f      -> count_successful
+             t       |      t      -> count_slr_exceeded
+        """
 
         proc_start = time.time()
 
         prb_id_condition = self.__make_multiple_or_condition("prb_id",
                                                              probe_names)
 
-        unanswered = self.app.session.query(
+        failed = self.app.session.query(
             "select count(time_took) from %s where \
              got_response = 'False' and \
              dst_name = $dst_name and \
@@ -393,18 +401,31 @@ class Mes_dnsprobe(InfluxDBMeasurementBase):
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
-        return unanswered
+        failed_count = 0
+        for records in failed:
+            for data in records:
+                failed_count = data["count"]
 
-    def get_ratiograph_answered(self, dns_server_name, probe_names, af, proto,
-                                rrtype, start_time, end_time):
+        return failed_count
+
+    def get_ratiograph_exceeded_slr(self, dns_server_name, probe_names, af,
+                                    proto, rrtype, start_time, end_time):
+        """
+        got_response | slr_exceeded
+             f       |      f      -> count_failed
+             f       |      t      -> count_failed
+             t       |      f      -> count_successful
+             t       |      t      -> count_exceeded_slr
+        """
 
         proc_start = time.time()
         prb_id_condition = self.__make_multiple_or_condition("prb_id",
                                                              probe_names)
 
-        answered = self.app.session.query(
+        exceeded_slr = self.app.session.query(
             "select count(time_took) from %s where \
              got_response = 'True' and \
+             slr_exceeded = 'True' and \
              dst_name = $dst_name and \
              af = $af and \
              proto = $proto and \
@@ -422,7 +443,54 @@ class Mes_dnsprobe(InfluxDBMeasurementBase):
 
         LOGGER.debug("time took: %s" % (time.time() - proc_start))
 
-        return answered
+        exceeded_slr_count = 0
+        for records in exceeded_slr:
+            for data in records:
+                exceeded_slr_count = data["count"]
+
+        return exceeded_slr_count
+
+    def get_ratiograph_successful(self, dns_server_name, probe_names, af,
+                                  proto, rrtype, start_time, end_time):
+        """
+        got_response | slr_exceeded
+             f       |      f      -> count_failed
+             f       |      t      -> count_failed
+             t       |      f      -> count_successful
+             t       |      t      -> count_slr_exceeded
+        """
+
+        proc_start = time.time()
+        prb_id_condition = self.__make_multiple_or_condition("prb_id",
+                                                             probe_names)
+
+        successful = self.app.session.query(
+            "select count(time_took) from %s where \
+             got_response = 'True' and \
+             slr_exceeded = 'False' and \
+             dst_name = $dst_name and \
+             af = $af and \
+             proto = $proto and \
+             rrtype = $rrtype and \
+             $start_time < time and \
+             time < $end_time and \
+             (%s)" % (self.measurement, prb_id_condition),
+            params=dict(params=json.dumps(
+                dict(dst_name=dns_server_name,
+                     af=af,
+                     proto=proto,
+                     rrtype=rrtype,
+                     start_time=start_time,
+                     end_time=end_time))))
+
+        LOGGER.debug("time took: %s" % (time.time() - proc_start))
+
+        successful_count = 0
+        for records in successful:
+            for data in records:
+                successful_count = data["count"]
+
+        return successful_count
 
     def get_percentilegraph_data(self, dns_server_name, probe_names, rrtype,
                                  start_time, end_time):
