@@ -22,7 +22,7 @@ import dns.message
 import dns.query
 import dns.rdatatype
 import dns.exception
-from multiprocessing.pool import ThreadPool
+import concurrent.futures as cfu
 
 import common.common.framework as framework
 import common.data.dao as dao
@@ -248,75 +248,77 @@ class Measurer(framework.SetupwithInfluxdb):
                      tcp_timeout,
                      self.cnfg.constants.tcp_slr_threshold * 1000)}
 
-        threadpool = ThreadPool(processes=1)
-        async_results = []
+        workers = self.cnfs.measurement.number_of_max_workers
+        futures = []
 
-        for measurement in self.measurement_info:
+        with cfu.ThreadPoolExecutor(max_workers=workers) as threadpool:
 
-            nameserver = measurement.nameserver
-            protocol = measurement.proto
-            query = measurement.query
-            dst = measurement.destination
+            for measurement in self.measurement_info:
 
-            for addr in dst:
+                nameserver = measurement.nameserver
+                protocol = measurement.proto
+                query = measurement.query
+                dst = measurement.destination
 
-                addr_obj = ipaddress.ip_address(addr)
+                for addr in dst:
 
-                if addr_obj.version == 4:
-                    source = self.ipv4
-                    asn, asn_desc = self.net_desc_v4
-                elif addr_obj.version == 6:
-                    source = self.ipv6
-                    asn, asn_desc = self.net_desc_v6
-                else:
-                    self.logger.error("unknown version addr: %s" % str(addr))
-                    continue
+                    addr_obj = ipaddress.ip_address(addr)
 
-                queryer, timeout, slr_threshold = \
-                    queryer_info_by_protocol[protocol]
+                    if addr_obj.version == 4:
+                        source = self.ipv4
+                        asn, asn_desc = self.net_desc_v4
+                    elif addr_obj.version == 6:
+                        source = self.ipv6
+                        asn, asn_desc = self.net_desc_v6
+                    else:
+                        self.logger.error(
+                            "unknown version addr: %s" % str(addr))
+                        continue
 
-                qname = query.qname
-                rrtype = query.rrtype
+                    queryer, timeout, slr_threshold = \
+                        queryer_info_by_protocol[protocol]
 
-                try:
-                    qname_obj = dns.name.from_text(qname)
-                    rrtype_obj = dns.rdatatype.from_text(rrtype)
-                    qo = dns.message.make_query(qname_obj,
-                                                rrtype_obj,
-                                                use_edns=True)
-                    qo.flags &= 0xFEFF
-                    qo.use_edns(edns=0,
-                                options=[dns.edns.GenericOption(dns.edns.NSID,
-                                                                bytes())])
+                    qname = query.qname
+                    rrtype = query.rrtype
 
-                except dns.rdatatype.UnknownRdatatype:
-                    self.logger.warning("unknown query: %s" % (rrtype))
-                    self.logger.warning("measurement skipped")
-                    continue
-                except Exception as ex:
-                    self.logger.warning("unable to query: %s" % (str(ex)))
-                    self.logger.warning("measurement skipped")
-                    continue
+                    try:
+                        qname_obj = dns.name.from_text(qname)
+                        rrtype_obj = dns.rdatatype.from_text(rrtype)
+                        qo = dns.message.make_query(qname_obj,
+                                                    rrtype_obj,
+                                                    use_edns=True)
+                        qo.flags &= 0xFEFF
+                        qo.use_edns(edns=0,
+                                    options=[dns.edns.GenericOption(
+                                        dns.edns.NSID, bytes())])
 
-                async_results.append(
-                    threadpool.apply_async(self.measurement_core,
-                                           (current_time,
-                                            nameserver,
-                                            queryer,
-                                            addr,
-                                            source,
-                                            addr_obj.version,
-                                            asn,
-                                            asn_desc,
-                                            timeout,
-                                            protocol,
-                                            qname,
-                                            rrtype,
-                                            qo,
-                                            slr_threshold
-                                            )))
-        for each in async_results:
-            result.append(each.get())
+                    except dns.rdatatype.UnknownRdatatype:
+                        self.logger.warning("unknown query: %s" % (rrtype))
+                        self.logger.warning("measurement skipped")
+                        continue
+                    except Exception as ex:
+                        self.logger.warning("unable to query: %s" % (str(ex)))
+                        self.logger.warning("measurement skipped")
+                        continue
+
+                    futures.append(threadpool.submit(self.measurement_core,
+                                                     current_time,
+                                                     nameserver,
+                                                     queryer,
+                                                     addr,
+                                                     source,
+                                                     addr_obj.version,
+                                                     asn,
+                                                     asn_desc,
+                                                     timeout,
+                                                     protocol,
+                                                     qname,
+                                                     rrtype,
+                                                     qo,
+                                                     slr_threshold))
+
+        for future in cfu.as_completed(futures):
+            result.append(future.result())
 
         self.logger.info("%s data measured" % (len(result)))
         self.logger.debug("following is massured data %s" % str(result))
