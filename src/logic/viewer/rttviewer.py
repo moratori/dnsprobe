@@ -187,7 +187,7 @@ class RTTViewerLogic():
 
             traces = []
 
-            for (af, proto) in ret.keys():
+            for (af, proto) in sorted(ret.keys()):
                 x, y = ret[(af, proto)]
                 traces.append(go.Scatter(mode="lines",
                                          x=x,
@@ -365,7 +365,7 @@ class RTTViewerLogic():
                     dns_server_name, probe_name)
 
             traces = []
-            for (af, proto) in af_proto_combination:
+            for (af, proto) in sorted(af_proto_combination):
 
                 x, y = \
                     self.rttviewer.dao_dnsprobe.get_rttgraph_data(
