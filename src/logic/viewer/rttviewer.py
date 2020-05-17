@@ -14,6 +14,7 @@ import dash_html_components as html
 import dash_core_components as doc
 
 from dash.dependencies import Input, Output
+from plotly.subplots import make_subplots
 from flask import abort, Response
 from logging import getLogger
 from werkzeug.routing import BaseConverter
@@ -110,7 +111,8 @@ class RTTViewerLogic():
              Input("main-content-menu-filter_probe", "value"),
              Input("main-content-menu-filter_rrtype", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_graph(time_range, dns_server_names, probe_names, rrtype, cnt):
+        def update_graph(time_range, dns_server_names, probe_names, rrtype,
+                         cnt):
 
             result = []
 
@@ -132,7 +134,7 @@ class RTTViewerLogic():
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
-                                        width="37%")),
+                                        width="33%")),
 
                     html.Div([
                         doc.Graph(figure=__update_ratiograph(time_range,
@@ -142,7 +144,7 @@ class RTTViewerLogic():
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
-                                        width="37%")),
+                                        width="34%")),
 
                     html.Div([
                         doc.Graph(figure=__update_nsidgraph(time_range,
@@ -152,7 +154,7 @@ class RTTViewerLogic():
                                   style=dict(height=600),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
-                                        width="26%")),
+                                        width="33%")),
 
                     html.Div([
                         doc.Graph(figure=__update_percentilegraph(
@@ -248,23 +250,28 @@ class RTTViewerLogic():
 
             trace = go.Pie(values=values,
                            labels=labels,
-                           name="",
+                           name="NSID",
+                           title="NSID",
                            hoverinfo="label+percent+name",
                            hole=0.4)
 
             figure = dict(data=[trace],
-                          layout=go.Layout(title=title,
+                          layout=go.Layout(title=dict(text=title,
+                                                      xanchor="center",
+                                                      yanchor="top",
+                                                      x=0.5,
+                                                      y=0.97),
                                            legend=dict(orientation="h",
                                                        font=dict(size=9),
                                                        yanchor="top",
                                                        x=0,
-                                                       y=1.02),
+                                                       y=1.17),
                                            showlegend=(len(values) <
                                                        legend_max_num),
-                                           margin=dict(t=70,
-                                                       b=35,
-                                                       r=15,
-                                                       l=45
+                                           margin=dict(t=110,
+                                                       b=90,
+                                                       r=90,
+                                                       l=90
                                                        )))
 
             return figure
@@ -283,11 +290,12 @@ class RTTViewerLogic():
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "RTT distribution(%s from selected probes)" % (
+            title = "Query Reponse Rate(%s from selected probes)" % (
                 dns_server_name)
 
-            labels = ["Failed", "Exceeded specific threshold", "Successful"]
-            donut_size = 0.3
+            labels = ["Failed", "Exceeded specific RTT threshold",
+                      "Successful"]
+            donut_size = 0.45
             hoverinfo = "label+percent+name"
             row_tiling_num = 2
 
@@ -296,8 +304,14 @@ class RTTViewerLogic():
             columns = int(num_of_graphs if row_tiling_num >= num_of_graphs
                           else row_tiling_num)
 
-            traces = []
-            for (n, (af, proto)) in enumerate(af_proto_combination):
+            subplots = make_subplots(rows=rows,
+                                     cols=columns,
+                                     specs=[[dict(type="domain")
+                                             for column in range(columns)]
+                                            for row in range(rows)],
+                                     vertical_spacing=0.1)
+
+            for (n, (af, proto)) in enumerate(sorted(af_proto_combination)):
                 r = int(n / row_tiling_num)
                 c = int(n % row_tiling_num)
 
@@ -316,34 +330,41 @@ class RTTViewerLogic():
                 if (failed_count + successful_count + exceeded_count) == 0:
                     continue
 
-                traces.append(go.Pie(values=[failed_count,
-                                             exceeded_count,
-                                             successful_count],
-                                     labels=labels,
-                                     domain=dict(row=r, column=c),
-                                     name=snt.escape("%s IPv%s" %
-                                                     (proto.upper(), af)),
-                                     hoverinfo=hoverinfo,
-                                     hole=donut_size,
-                                     marker=dict(colors=["red",
-                                                         "orange",
-                                                         "green"])))
+                subtitle = snt.escape("%s IPv%s" % (proto.upper(), af))
 
-            figure = dict(data=traces,
-                          layout=go.Layout(title=title,
-                                           margin=dict(t=70,
-                                                       b=35,
-                                                       r=15,
-                                                       l=45),
-                                           legend=dict(orientation="h",
-                                                       font=dict(size=9),
-                                                       yanchor="top",
-                                                       x=0.34,
-                                                       y=1.02),
-                                           grid=dict(rows=rows,
-                                                     columns=columns)))
+                subplots.add_trace(go.Pie(values=[failed_count,
+                                                  exceeded_count,
+                                                  successful_count],
+                                          labels=labels,
+                                          domain=dict(row=r, column=c),
+                                          name=subtitle,
+                                          hoverinfo=hoverinfo,
+                                          hole=donut_size,
+                                          title=subtitle,
+                                          marker=dict(colors=["red",
+                                                              "orange",
+                                                              "green"])),
+                                   r+1,
+                                   c+1)
 
-            return figure
+            subplots.update_layout(title=dict(text=title,
+                                              xanchor="center",
+                                              yanchor="top",
+                                              x=0.5,
+                                              y=0.97),
+                                   margin=dict(t=100,
+                                               b=30,
+                                               r=0,
+                                               l=50),
+                                   legend=dict(orientation="h",
+                                               font=dict(size=9),
+                                               yanchor="top",
+                                               x=0.1,
+                                               y=1.13),
+                                   grid=dict(rows=rows,
+                                             columns=columns))
+
+            return subplots
 
         def __update_rttgraph(time_range, dns_server_name, probe_name, rrtype):
 
@@ -354,7 +375,7 @@ class RTTViewerLogic():
             if not dns_server_name:
                 return dict()
 
-            title = "RTT Performance(%s from selected probes)" % (
+            title = "Time Variation of RTT(%s from selected probes)" % (
                 dns_server_name)
 
             start_time, end_time = \
@@ -404,7 +425,7 @@ class RTTViewerLogic():
                                           font=dict(size=9),
                                           yanchor="top",
                                           x=0,
-                                          y=1.02)))
+                                          y=1.05)))
 
             return figure
 
