@@ -62,6 +62,8 @@ class RTTViewerLogic():
             return False
         pat = re.compile("^[A-Za-z0-9\.\-]+$")
         for each in dns_server_names:
+            if each is None:
+                return False
             if not pat.findall(each):
                 return False
         return True
@@ -71,6 +73,8 @@ class RTTViewerLogic():
             return False
         pat = re.compile("^[a-z0-9\-]+$")
         for each in probe_names:
+            if each is None:
+                return False
             if not pat.findall(each):
                 return False
         return True
