@@ -5,7 +5,7 @@ docstring is here
 """
 
 import os
-import dash_core_components as doc
+from dash import dcc
 import plotly.graph_objs as go
 
 from dash.dependencies import Input, Output
@@ -81,7 +81,7 @@ class SLAViewerLogic():
             if not self.check_supported_service_level(kind):
                 return []
 
-            graph = doc.Graph(figure=__update_current_graph(kind),
+            graph = dcc.Graph(figure=__update_current_graph(kind),
                               style=dict(height=600,
                                          width=1650,
                                          marginTop=0,

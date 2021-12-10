@@ -10,8 +10,8 @@ import os
 import datetime
 import math
 import re
-import dash_html_components as html
-import dash_core_components as doc
+from dash import html
+from dash import dcc
 
 from dash.dependencies import Input, Output
 from plotly.subplots import make_subplots
@@ -131,7 +131,7 @@ class RTTViewerLogic():
 
                 result.append(html.Div([
                     html.Div([
-                        doc.Graph(figure=__update_rttgraph(time_range,
+                        dcc.Graph(figure=__update_rttgraph(time_range,
                                                            dns_server_name,
                                                            probe_names,
                                                            rrtype),
@@ -141,7 +141,7 @@ class RTTViewerLogic():
                                         width="33%")),
 
                     html.Div([
-                        doc.Graph(figure=__update_ratiograph(time_range,
+                        dcc.Graph(figure=__update_ratiograph(time_range,
                                                              dns_server_name,
                                                              probe_names,
                                                              rrtype),
@@ -151,7 +151,7 @@ class RTTViewerLogic():
                                         width="34%")),
 
                     html.Div([
-                        doc.Graph(figure=__update_nsidgraph(time_range,
+                        dcc.Graph(figure=__update_nsidgraph(time_range,
                                                             dns_server_name,
                                                             probe_names,
                                                             rrtype),
@@ -161,7 +161,7 @@ class RTTViewerLogic():
                                         width="33%")),
 
                     html.Div([
-                        doc.Graph(figure=__update_percentilegraph(
+                        dcc.Graph(figure=__update_percentilegraph(
                             time_range,
                             dns_server_name,
                             probe_names,

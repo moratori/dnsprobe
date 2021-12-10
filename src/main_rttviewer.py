@@ -8,8 +8,8 @@ import traceback
 import os
 import sys
 import dash
-import dash_html_components as html
-import dash_core_components as doc
+from dash import html
+from dash import dcc
 
 import common.common.config as config
 import common.common.framework as framework
@@ -31,7 +31,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
         header = html.Div([
             html.H1("Authoritative DNS Server Response Time"),
-            doc.Interval(id="main-content-graph-interval",
+            dcc.Interval(id="main-content-graph-interval",
                          interval=30 * 1000,
                          n_intervals=0)
         ], id="main-content-header")
@@ -59,7 +59,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
         menu = html.Div([
             html.Div([
                 "Filter by measurement time:",
-                doc.RangeSlider(id="main-content-menu-filter_measurement_time",
+                dcc.RangeSlider(id="main-content-menu-filter_measurement_time",
                                 min=1,
                                 max=24,
                                 step=1,
@@ -74,7 +74,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
             html.Div([
                 "Filter by authoritative server:",
-                doc.Dropdown(id="main-content-menu-filter_authoritatives",
+                dcc.Dropdown(id="main-content-menu-filter_authoritatives",
                              options=authoritative_group,
                              value=[default_authoritative],
                              multi=True)
@@ -87,7 +87,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
             html.Div([
                 "Filter by Resource Record type:",
-                doc.Dropdown(id="main-content-menu-filter_rrtype",
+                dcc.Dropdown(id="main-content-menu-filter_rrtype",
                              options=rrtype_group,
                              value=default_rrtype,
                              multi=False)
@@ -101,7 +101,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
             html.Div([
                 "Filter by measurer:",
-                doc.Dropdown(id="main-content-menu-filter_probe",
+                dcc.Dropdown(id="main-content-menu-filter_probe",
                              options=probe_group,
                              value=[default_probe],
                              multi=True),
@@ -125,7 +125,7 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
     def make_map(self):
 
-        graph = html.Div([doc.Graph("main-content-map-figure",
+        graph = html.Div([dcc.Graph("main-content-map-figure",
                                     figure=dict(),
                                     config=dict(displayModeBar=False,
                                                 scrollZoom=False),

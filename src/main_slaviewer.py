@@ -7,8 +7,8 @@ docstring is here
 import traceback
 import sys
 import dash
-import dash_html_components as html
-import dash_core_components as doc
+from dash import html
+from dash import dcc
 
 import common.common.framework as framework
 import common.data.dao as dao
@@ -34,7 +34,7 @@ class SLAMonitor(framework.SetupwithInfluxdb):
 
         header = html.Div([
             html.H1("Authoritative DNS Server Service Level Monitor"),
-            doc.Interval(id="main-content-graph-interval",
+            dcc.Interval(id="main-content-graph-interval",
                          interval=150 * 1000,
                          n_intervals=0)
         ], id="main-content-header")
@@ -52,7 +52,7 @@ class SLAMonitor(framework.SetupwithInfluxdb):
         menu = html.Div([
             html.Div([
                 html.H2("Select a criteria of service level"),
-                doc.Dropdown(id="main-content-menu-filter_sl",
+                dcc.Dropdown(id="main-content-menu-filter_sl",
                              options=supported,
                              value=default,
                              multi=False)])

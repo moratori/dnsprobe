@@ -7,9 +7,9 @@ docstring is here
 import traceback
 import sys
 import dash
-import dash_table
-import dash_html_components as html
-import dash_core_components as doc
+from dash import dash_table
+from dash import html
+from dash import dcc
 
 import common.common.framework as framework
 import common.data.dao as dao
@@ -30,7 +30,7 @@ class RateMonitor(framework.SetupwithInfluxdb):
 
         header = html.Div([
             html.H1("Overview of Successful Response Rate Last 24 hours"),
-            doc.Interval(id="main-content-table-interval",
+            dcc.Interval(id="main-content-table-interval",
                          interval=30 * 1000,
                          n_intervals=0)
         ], id="main-content-header")
@@ -61,7 +61,7 @@ less than 0.5 seconds for UDP. For more information, please refer the following 
         menu = html.Div([
             html.Div([
                 "Filter by Resource Record type:",
-                doc.Dropdown(id="main-content-menu-filter_rrtype",
+                dcc.Dropdown(id="main-content-menu-filter_rrtype",
                              options=rrtype_group,
                              value=default_rrtype,
                              multi=False)],
