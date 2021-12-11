@@ -119,6 +119,7 @@ class RTTViewerLogic():
                          cnt):
 
             result = []
+            graph_height = 500
 
             if not (self.check_time_range(time_range) and
                     self.check_dns_server_names(dns_server_names) and
@@ -135,7 +136,7 @@ class RTTViewerLogic():
                                                            dns_server_name,
                                                            probe_names,
                                                            rrtype),
-                                  style=dict(height=600),
+                                  style=dict(height=graph_height),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
                                         width="33%")),
@@ -145,7 +146,7 @@ class RTTViewerLogic():
                                                              dns_server_name,
                                                              probe_names,
                                                              rrtype),
-                                  style=dict(height=600),
+                                  style=dict(height=graph_height),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
                                         width="34%")),
@@ -155,7 +156,7 @@ class RTTViewerLogic():
                                                             dns_server_name,
                                                             probe_names,
                                                             rrtype),
-                                  style=dict(height=600),
+                                  style=dict(height=graph_height),
                                   config=dict(displayModeBar=False))],
                              style=dict(display="inline-block",
                                         width="33%")),
@@ -166,9 +167,9 @@ class RTTViewerLogic():
                             dns_server_name,
                             probe_names,
                             rrtype),
-                                  style=dict(height=350),
+                                  style=dict(height=500),
                                   config=dict(displayModeBar=False))],
-                             style=dict(width="100%",
+                             style=dict(width="34%",
                                         marginLeft="auto",
                                         marginRight="auto"))
                 ]))
@@ -213,14 +214,19 @@ class RTTViewerLogic():
                                          autorange=True,
                                          type="log",
                                          rangemode="tozero"),
-                              yaxis=dict(title="Percentile",
+                              yaxis=dict(title="Percentile(%)",
                                          autorange=True,
                                          rangemode="tozero"),
                               legend=dict(orientation="h",
                                           font=dict(size=9),
                                           yanchor="top",
                                           x=0,
-                                          y=1.1)))
+                                          y=1.1),
+                              paper_bgcolor="#3c3b45",
+                              plot_bgcolor="#3c3b45",
+                              font_color="#cbcad3",
+                              title_font_color="#cbcad3",
+                          ))
 
             return figure
 
@@ -276,7 +282,12 @@ class RTTViewerLogic():
                                                        b=90,
                                                        r=90,
                                                        l=90
-                                                       )))
+                                                       ),
+                                           paper_bgcolor="#3c3b45",
+                                           plot_bgcolor="#3c3b45",
+                                           font_color="#cbcad3",
+                                           title_font_color="#cbcad3",
+                                           ))
 
             return figure
 
@@ -366,7 +377,12 @@ class RTTViewerLogic():
                                                x=0.1,
                                                y=1.13),
                                    grid=dict(rows=rows,
-                                             columns=columns))
+                                             columns=columns),
+                                   paper_bgcolor="#3c3b45",
+                                   plot_bgcolor="#3c3b45",
+                                   font_color="#cbcad3",
+                                   title_font_color="#cbcad3"
+                                   )
 
             return subplots
 
@@ -429,7 +445,12 @@ class RTTViewerLogic():
                                           font=dict(size=9),
                                           yanchor="top",
                                           x=0,
-                                          y=1.05)))
+                                          y=1.05),
+                              paper_bgcolor="#3c3b45",
+                              plot_bgcolor="#3c3b45",
+                              font_color="#cbcad3",
+                              title_font_color="#cbcad3"
+                          ))
 
             return figure
 
@@ -439,9 +460,9 @@ class RTTViewerLogic():
              Input("main-content-graph-interval", "n_intervals")])
         def update_map(probe_names, cnt):
 
-            map_height = 850
+            map_height = 500
             map_scale = 1.1
-            map_center_lat = 25
+            map_center_lat = 0
             map_center_lon = 0
             map_region = "world"
             map_title = "Location of Probes"
@@ -449,7 +470,7 @@ class RTTViewerLogic():
             map_resolution = 50
             map_proj_type = "equirectangular"
             color_map = {True: "orange", False: "grey"}
-            size_map = {True: 14, False: 13}
+            size_map = {True: 11, False: 10}
             hovertext = "probe-id: %s<br />last measured: %s<br />uptime: %s\
             <br />ASN(v4): AS%s<br />description(v4): %s\
             <br />ASN(v6): AS%s<br />description(v6): %s"
@@ -494,8 +515,8 @@ class RTTViewerLogic():
             layout = go.Layout(title=dict(text=map_title,
                                           y=0.97),
                                height=map_height,
-                               margin=dict(t=0,
-                                           b=25,
+                               margin=dict(t=15,
+                                           b=15,
                                            pad=0,
                                            r=0,
                                            l=0),
@@ -512,6 +533,11 @@ class RTTViewerLogic():
                                                     lon=map_center_lon),
                                         landcolor=map_land_color,
                                         countrywidth=0.3,
-                                        subunitwidth=0.3))
+                                        subunitwidth=0.3),
+                               paper_bgcolor="#3c3b45",
+                               plot_bgcolor="#3c3b45",
+                               font_color="#cbcad3",
+                               title_font_color="#cbcad3"
+                               )
 
             return dict(data=data, layout=layout)

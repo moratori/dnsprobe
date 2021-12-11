@@ -29,12 +29,15 @@ class RTTViewer(framework.SetupwithInfluxdb):
 
     def make_header(self):
 
+        text_color = "#cbcad3"
+
         header = html.Div([
             html.H1("Authoritative DNS Server Response Time"),
             dcc.Interval(id="main-content-graph-interval",
                          interval=30 * 1000,
                          n_intervals=0)
-        ], id="main-content-header")
+        ], id="main-content-header",
+           style=dict(color=text_color))
 
         return header
 
@@ -56,6 +59,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
         if rrtype_group:
             default_rrtype = rrtype_group[0]["value"]
 
+        text_color = "#cbcad3"
+
         menu = html.Div([
             html.Div([
                 "Filter by measurement time:",
@@ -69,8 +74,13 @@ class RTTViewer(framework.SetupwithInfluxdb):
                                     9: "15 hours ago",
                                     16: "8 hours ago",
                                     23: "1 horus ago"})],
-                     style=dict(width="100%",
-                                marginTop="2%")),
+                     style=dict(width="95%",
+                                paddingTop="1.5%",
+                                paddingLeft="0%",
+                                marginLeft="3%",
+                                marginRight="3%",
+                                color=text_color
+                                )),
 
             html.Div([
                 "Filter by authoritative server:",
@@ -79,10 +89,13 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=[default_authoritative],
                              multi=True)
             ], style=dict(display="inline-block",
-                          width="32%",
+                          width="30%",
                           marign="auto",
-                          marginTop="3%",
-                          marginRight="1%"
+                          marginTop="1%",
+                          marginLeft="3%",
+                          marginRight="1%",
+                          marginBottom="1.5%",
+                          color=text_color
                           )),
 
             html.Div([
@@ -92,11 +105,13 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=default_rrtype,
                              multi=False)
             ], style=dict(display="inline-block",
-                          width="32%",
+                          width="30%",
                           marign="auto",
-                          marginTop="3%",
+                          marginTop="1%",
                           marginRight="1%",
-                          marginLeft="1%"
+                          marginLeft="1%",
+                          marginBottom="1.5%",
+                          color=text_color
                           )),
 
             html.Div([
@@ -106,13 +121,19 @@ class RTTViewer(framework.SetupwithInfluxdb):
                              value=[default_probe],
                              multi=True),
             ], style=dict(display="inline-block",
-                          width="32%",
+                          width="30%",
                           margin="auto",
-                          marginTop="3%",
-                          marginLeft="1%"))
+                          marginTop="1%",
+                          marginLeft="1%",
+                          marginRight="3%",
+                          marginBottom="1.5%",
+                          color=text_color
+                          ))
 
         ], id="main-content-menu",
-            style=dict(marginBottom="1.5%"))
+            style=dict(marginBottom="0.5%",
+                       backgroundColor="#3c3b45",
+                       boxShadow="0 0 10px black"))
 
         return menu
 
@@ -129,9 +150,10 @@ class RTTViewer(framework.SetupwithInfluxdb):
                                     figure=dict(),
                                     config=dict(displayModeBar=False,
                                                 scrollZoom=False),
-                                    style=dict(paddingTop="0%"))
+                                    style=dict(paddingTop="2%",
+                                               width="55%"))
                           ], style=dict(display="block",
-                                        marginTop="0%",
+                                        marginTop="0.5%",
                                         marginLeft="auto",
                                         marginRight="auto"),
                          id="main-content-map")
@@ -161,6 +183,8 @@ class RTTViewer(framework.SetupwithInfluxdb):
         return result
 
     def set_layout(self):
+        backgroundColor = "#212027" # set same value in css
+
         self.application.layout = html.Div([
             self.make_css(),
             html.Div([
@@ -171,14 +195,15 @@ class RTTViewer(framework.SetupwithInfluxdb):
                     self.make_map()
                 ], style=dict(id="main-content",
                               width="96%",
-                              margin="auto"))
+                              margin="auto",
+                              backgroundColor=backgroundColor))
             ], id="main",
                style=dict(margin="auto",
                           marginTop="0%",
                           width="100%",
                           boxShadow="0px 0px 3px",
-                          border="1px solid #eee",
-                          bacgroundColor="#ffffff"))])
+                          border="1px solid " + backgroundColor,
+                          bacgroundColor=backgroundColor))])
 
     def setup_application(self):
         self.application = dash.Dash(__name__)
