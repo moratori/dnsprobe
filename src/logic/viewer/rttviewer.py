@@ -33,8 +33,9 @@ class RegexConverter(BaseConverter):
 
 class RTTViewerLogic():
 
-    def __init__(self, rttviewer):
+    def __init__(self, rttviewer, plotarea_coloring):
         self.rttviewer = rttviewer
+        self.plotarea_coloring = plotarea_coloring
 
     def convert_range_index_to_time(self, time_range):
 
@@ -57,15 +58,12 @@ class RTTViewerLogic():
                 type(time_range[0]) is int and
                 type(time_range[1]) is int)
 
-    def check_dns_server_names(self, dns_server_names):
-        if dns_server_names is None or not dns_server_names:
+    def check_dns_server_name(self, dns_server_name):
+        if dns_server_name is None or not dns_server_name:
             return False
         pat = re.compile("^[A-Za-z0-9\.\-]+$")
-        for each in dns_server_names:
-            if each is None:
-                return False
-            if not pat.findall(each):
-                return False
+        if not pat.findall(dns_server_name):
+            return False
         return True
 
     def check_probe_names(self, probe_names):
@@ -109,82 +107,28 @@ class RTTViewerLogic():
                 abort(404)
 
         @self.rttviewer.application.callback(
-            Output("main-content-graph", "children"),
+            Output("main-content-graph-percentile-figure", "figure"),
             [Input("main-content-menu-filter_measurement_time", "value"),
-             Input("main-content-menu-filter_authoritatives", "value"),
+             Input("main-content-menu-filter_authoritative", "value"),
              Input("main-content-menu-filter_probe", "value"),
              Input("main-content-menu-filter_rrtype", "value"),
              Input("main-content-graph-interval", "n_intervals")])
-        def update_graph(time_range, dns_server_names, probe_names, rrtype,
-                         cnt):
-
-            result = []
-            graph_height = 500
+        def update_percentilegraph(time_range, dns_server_name, probe_names,
+                                   rrtype, cnt):
 
             if not (self.check_time_range(time_range) and
-                    self.check_dns_server_names(dns_server_names) and
+                    self.check_dns_server_name(dns_server_name) and
                     self.check_probe_names(probe_names) and
                     self.check_rrtype(rrtype)):
                 LOGGER.warning("lack of argument for rendering graph")
-                return result
-
-            for dns_server_name in reversed(dns_server_names):
-
-                result.append(html.Div([
-                    html.Div([
-                        dcc.Graph(figure=__update_rttgraph(time_range,
-                                                           dns_server_name,
-                                                           probe_names,
-                                                           rrtype),
-                                  style=dict(height=graph_height),
-                                  config=dict(displayModeBar=False))],
-                             style=dict(display="inline-block",
-                                        width="33%")),
-
-                    html.Div([
-                        dcc.Graph(figure=__update_ratiograph(time_range,
-                                                             dns_server_name,
-                                                             probe_names,
-                                                             rrtype),
-                                  style=dict(height=graph_height),
-                                  config=dict(displayModeBar=False))],
-                             style=dict(display="inline-block",
-                                        width="34%")),
-
-                    html.Div([
-                        dcc.Graph(figure=__update_nsidgraph(time_range,
-                                                            dns_server_name,
-                                                            probe_names,
-                                                            rrtype),
-                                  style=dict(height=graph_height),
-                                  config=dict(displayModeBar=False))],
-                             style=dict(display="inline-block",
-                                        width="33%")),
-
-                    html.Div([
-                        dcc.Graph(figure=__update_percentilegraph(
-                            time_range,
-                            dns_server_name,
-                            probe_names,
-                            rrtype),
-                                  style=dict(height=500),
-                                  config=dict(displayModeBar=False))],
-                             style=dict(width="34%",
-                                        marginLeft="auto",
-                                        marginRight="auto"))
-                ]))
-
-            return result
-
-        def __update_percentilegraph(time_range, dns_server_name, probe_name,
-                                     rrtype):
+                return dict()
 
             start_time, end_time = \
                 self.convert_range_index_to_time(time_range)
 
             ret = self.rttviewer.dao_dnsprobe.get_percentilegraph_data(
                 dns_server_name,
-                probe_name,
+                probe_names,
                 rrtype,
                 start_time,
                 end_time)
@@ -221,24 +165,38 @@ class RTTViewerLogic():
                                           font=dict(size=9),
                                           yanchor="top",
                                           x=0,
-                                          y=1.1),
-                              paper_bgcolor="#3c3b45",
-                              plot_bgcolor="#3c3b45",
-                              font_color="#cbcad3",
-                              title_font_color="#cbcad3",
+                                          y=1.08),
+                              paper_bgcolor=self.plotarea_coloring["paper_bgcolor"],
+                              plot_bgcolor=self.plotarea_coloring["plot_bgcolor"],
+                              font_color=self.plotarea_coloring["font_color"],
+                              title_font_color=self.plotarea_coloring["title_font_color"],
                           ))
 
             return figure
 
-        def __update_nsidgraph(time_range, dns_server_name, probe_name,
-                               rrtype):
+        @self.rttviewer.application.callback(
+            Output("main-content-graph-nsid-figure", "figure"),
+            [Input("main-content-menu-filter_measurement_time", "value"),
+             Input("main-content-menu-filter_authoritative", "value"),
+             Input("main-content-menu-filter_probe", "value"),
+             Input("main-content-menu-filter_rrtype", "value"),
+             Input("main-content-graph-interval", "n_intervals")])
+        def update_nsidgraph(time_range, dns_server_name, probe_names,
+                             rrtype, cnt):
+
+            if not (self.check_time_range(time_range) and
+                    self.check_dns_server_name(dns_server_name) and
+                    self.check_probe_names(probe_names) and
+                    self.check_rrtype(rrtype)):
+                LOGGER.warning("lack of argument for rendering graph")
+                return dict()
 
             start_time, end_time = \
                 self.convert_range_index_to_time(time_range)
 
             ret = self.rttviewer.dao_dnsprobe.get_nsidgraph_data(
                 dns_server_name,
-                probe_name,
+                probe_names,
                 rrtype,
                 start_time,
                 end_time)
@@ -283,29 +241,43 @@ class RTTViewerLogic():
                                                        r=90,
                                                        l=90
                                                        ),
-                                           paper_bgcolor="#3c3b45",
-                                           plot_bgcolor="#3c3b45",
-                                           font_color="#cbcad3",
-                                           title_font_color="#cbcad3",
+                                           paper_bgcolor=self.plotarea_coloring["paper_bgcolor"],
+                                           plot_bgcolor=self.plotarea_coloring["plot_bgcolor"],
+                                           font_color=self.plotarea_coloring["font_color"],
+                                           title_font_color=self.plotarea_coloring["title_font_color"],
                                            ))
 
             return figure
 
-        def __update_ratiograph(time_range, dns_server_name, probe_name,
-                                rrtype):
+        @self.rttviewer.application.callback(
+            Output("main-content-graph-ratio-figure", "figure"),
+            [Input("main-content-menu-filter_measurement_time", "value"),
+             Input("main-content-menu-filter_authoritative", "value"),
+             Input("main-content-menu-filter_probe", "value"),
+             Input("main-content-menu-filter_rrtype", "value"),
+             Input("main-content-graph-interval", "n_intervals")])
+        def update_ratiograph(time_range, dns_server_name, probe_names,
+                              rrtype, cnt):
+
+            if not (self.check_time_range(time_range) and
+                    self.check_dns_server_name(dns_server_name) and
+                    self.check_probe_names(probe_names) and
+                    self.check_rrtype(rrtype)):
+                LOGGER.warning("lack of argument for rendering graph")
+                return dict()
 
             start_time, end_time = \
                 self.convert_range_index_to_time(time_range)
 
             af_proto_combination = \
                 self.rttviewer.dao_dnsprobe.get_af_proto_combination(
-                    dns_server_name, probe_name)
+                    dns_server_name, probe_names)
 
             LOGGER.debug("time range %s to %s" % (start_time, end_time))
             LOGGER.debug("af proto combination: %s" %
                          (af_proto_combination))
 
-            title = "Query Reponse Rate(%s from selected probes)" % (
+            title = "Query Response Rate(%s from selected probes)" % (
                 dns_server_name)
 
             labels = ["Failed", "Exceeded specific RTT threshold",
@@ -330,7 +302,7 @@ class RTTViewerLogic():
                 r = int(n / row_tiling_num)
                 c = int(n % row_tiling_num)
 
-                args = (dns_server_name, probe_name, af, proto, rrtype,
+                args = (dns_server_name, probe_names, af, proto, rrtype,
                         start_time, end_time)
 
                 failed_count = self.rttviewer.dao_dnsprobe.\
@@ -375,22 +347,38 @@ class RTTViewerLogic():
                                                font=dict(size=9),
                                                yanchor="top",
                                                x=0.1,
-                                               y=1.13),
+                                               y=1.15),
                                    grid=dict(rows=rows,
                                              columns=columns),
-                                   paper_bgcolor="#3c3b45",
-                                   plot_bgcolor="#3c3b45",
-                                   font_color="#cbcad3",
-                                   title_font_color="#cbcad3"
+                                   paper_bgcolor=self.plotarea_coloring["paper_bgcolor"],
+                                   plot_bgcolor=self.plotarea_coloring["plot_bgcolor"],
+                                   font_color=self.plotarea_coloring["font_color"],
+                                   title_font_color=self.plotarea_coloring["title_font_color"],
                                    )
 
             return subplots
 
-        def __update_rttgraph(time_range, dns_server_name, probe_name, rrtype):
+
+        @self.rttviewer.application.callback(
+            Output("main-content-graph-rtt-figure", "figure"),
+            [Input("main-content-menu-filter_measurement_time", "value"),
+             Input("main-content-menu-filter_authoritative", "value"),
+             Input("main-content-menu-filter_probe", "value"),
+             Input("main-content-menu-filter_rrtype", "value"),
+             Input("main-content-graph-interval", "n_intervals")])
+        def update_rttgraph(time_range, dns_server_name, probe_names, rrtype,
+                            cnt):
 
             LOGGER.debug("time range: %s" % time_range)
             LOGGER.debug("dns server name: %s" % dns_server_name)
-            LOGGER.debug("probe name: %s" % probe_name)
+            LOGGER.debug("probe name: %s" % probe_names)
+
+            if not (self.check_time_range(time_range) and
+                    self.check_dns_server_name(dns_server_name) and
+                    self.check_probe_names(probe_names) and
+                    self.check_rrtype(rrtype)):
+                LOGGER.warning("lack of argument for rendering graph")
+                return dict()
 
             if not dns_server_name:
                 return dict()
@@ -403,7 +391,7 @@ class RTTViewerLogic():
 
             af_proto_combination = \
                 self.rttviewer.dao_dnsprobe.get_af_proto_combination(
-                    dns_server_name, probe_name)
+                    dns_server_name, probe_names)
 
             traces = []
             for (af, proto) in sorted(af_proto_combination):
@@ -411,7 +399,7 @@ class RTTViewerLogic():
                 x, y = \
                     self.rttviewer.dao_dnsprobe.get_rttgraph_data(
                         dns_server_name,
-                        probe_name,
+                        probe_names,
                         af,
                         proto,
                         rrtype,
@@ -446,16 +434,16 @@ class RTTViewerLogic():
                                           yanchor="top",
                                           x=0,
                                           y=1.05),
-                              paper_bgcolor="#3c3b45",
-                              plot_bgcolor="#3c3b45",
-                              font_color="#cbcad3",
-                              title_font_color="#cbcad3"
+                              paper_bgcolor=self.plotarea_coloring["paper_bgcolor"],
+                              plot_bgcolor=self.plotarea_coloring["plot_bgcolor"],
+                              font_color=self.plotarea_coloring["font_color"],
+                              title_font_color=self.plotarea_coloring["title_font_color"],
                           ))
 
             return figure
 
         @self.rttviewer.application.callback(
-            Output("main-content-map-figure", "figure"),
+            Output("main-content-graph-map-figure", "figure"),
             [Input("main-content-menu-filter_probe", "value"),
              Input("main-content-graph-interval", "n_intervals")])
         def update_map(probe_names, cnt):
@@ -534,10 +522,10 @@ class RTTViewerLogic():
                                         landcolor=map_land_color,
                                         countrywidth=0.3,
                                         subunitwidth=0.3),
-                               paper_bgcolor="#3c3b45",
-                               plot_bgcolor="#3c3b45",
-                               font_color="#cbcad3",
-                               title_font_color="#cbcad3"
+                               paper_bgcolor=self.plotarea_coloring["paper_bgcolor"],
+                               plot_bgcolor=self.plotarea_coloring["plot_bgcolor"],
+                               font_color=self.plotarea_coloring["font_color"],
+                               title_font_color=self.plotarea_coloring["title_font_color"],
                                )
 
             return dict(data=data, layout=layout)
