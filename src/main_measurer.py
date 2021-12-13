@@ -192,9 +192,8 @@ class Measurer(framework.SetupwithInfluxdb):
         response = None
         err = None
 
-        start_at = time.time()
-
         try:
+            start_at = time.time()
             response = queryer(qo, dst, timeout=timeout, source=src)
         except dns.exception.Timeout as ex:
             self.logger.warning("timeout while measurement: %s" % str(ex))
