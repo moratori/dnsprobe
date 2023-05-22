@@ -9,7 +9,7 @@ verify_ssl = true
 coverage = "==4.5.2"
 influxdb = "==5.2.1"
 dnspython = "==1.16.0"
-requests = "==2.21.0"
+requests = "==2.31.0"
 flask = "==2.0.2"
 dash = "==2.0.0"
 netifaces = "==0.10.8"
