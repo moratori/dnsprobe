@@ -6,7 +6,6 @@ docstring is here
 
 import requests
 import traceback
-import namedtupled
 import sys
 import json
 import socket
@@ -25,6 +24,7 @@ import dns.exception
 import concurrent.futures as cfu
 
 import common.common.framework as framework
+import common.common.util as util
 import common.data.dao as dao
 import common.data.types as types
 import common.data.errors as errors
@@ -42,7 +42,7 @@ class Measurer(framework.SetupwithInfluxdb):
             binascii.crc32(hostname.encode("utf8")))
 
     def set_server_boottime(self):
-        current_time = datetime.datetime.utcnow()
+        current_time = datetime.datetime.now(datetime.UTC)
         delta = datetime.timedelta(seconds=uptime.uptime())
         self.server_boottime = str((current_time - delta).isoformat()) + "Z"
 
@@ -168,7 +168,7 @@ class Measurer(framework.SetupwithInfluxdb):
         self.logger.debug(json_obj)
 
         try:
-            self.measurement_info = namedtupled.map(json_obj)
+            self.measurement_info = util.recursive_namedtuple(json_obj)
         except Exception:
             self.logger.error("unable to map json obj to namedtuple")
             raise errors.DNSProbeError("unable to get measurement info")
@@ -236,7 +236,7 @@ class Measurer(framework.SetupwithInfluxdb):
 
         tcp_timeout = self.cnfg.constants.tcp_timeout
         udp_timeout = self.cnfg.constants.udp_timeout
-        current_time = str(datetime.datetime.utcnow().isoformat()) + "Z"
+        current_time = str(datetime.datetime.now(datetime.UTC).isoformat()) + "Z"
         result = []
 
         queryer_info_by_protocol = \

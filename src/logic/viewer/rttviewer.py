@@ -61,7 +61,7 @@ class RTTViewerLogic():
     def check_dns_server_name(self, dns_server_name):
         if dns_server_name is None or not dns_server_name:
             return False
-        pat = re.compile("^[A-Za-z0-9\.\-]+$")
+        pat = re.compile(r"^[A-Za-z0-9\.\-]+$")
         if not pat.findall(dns_server_name):
             return False
         return True
@@ -69,7 +69,7 @@ class RTTViewerLogic():
     def check_probe_names(self, probe_names):
         if probe_names is None or not probe_names:
             return False
-        pat = re.compile("^[a-z0-9\-]+$")
+        pat = re.compile(r"^[a-z0-9\-]+$")
         for each in probe_names:
             if each is None:
                 return False

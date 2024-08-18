@@ -3,7 +3,6 @@
 import re
 import os
 import configparser
-import namedtupled
 import sys
 import traceback
 import json
@@ -15,6 +14,7 @@ from influxdb import InfluxDBClient
 
 import common.common.logger as logger
 import common.common.config as config
+import common.common.util as util
 
 
 class BaseSetup(object):
@@ -94,7 +94,7 @@ class BaseSetup(object):
         if isinstance(config, str):
             string_type = re.compile("^(\".*\"|'.*')$")
             integer_type = re.compile("^[0-9]+$")
-            float_type = re.compile("^[0-9]+\.[0-9]+$")
+            float_type = re.compile(r"^[0-9]+\.[0-9]+$")
             boolean_type = re.compile("^(true|false)$")
             if string_type.findall(config):
                 return config.strip("\"'")
@@ -126,9 +126,9 @@ class BaseSetup(object):
         specific_conf.read(os.path.join(config.CONFIG_DIR,
                                         specific_config_basename))
 
-        self.cnfg = namedtupled.map(self.convert_config_type(
+        self.cnfg = util.recursive_namedtuple(self.convert_config_type(
             general_conf._sections))
-        self.cnfs = namedtupled.map(self.convert_config_type(
+        self.cnfs = util.recursive_namedtuple(self.convert_config_type(
             specific_conf._sections))
 
         self.validate_config()
@@ -219,7 +219,6 @@ class SetupwithMySQLdb(BaseSetup):
             self.cnfg.database.dbname
         )
         self.dbengine = create_engine(database_specifier,
-                                      encoding="utf-8",
                                       echo=False)
 
         session = scoped_session(sessionmaker(autocommit=False,
